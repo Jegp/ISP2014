@@ -52,8 +52,12 @@ public class GLaDOS implements IGameLogic {
                         }
                     }
                 } else {
-                    if (board[n][row] > 0) playerID = board[n][row];
-                    coherentFields = 0;
+                    if (board[n][row] > 0) {
+                        playerID = board[n][row];
+                        coherentFields = 1;
+                    } else {
+                        coherentFields = 0;
+                    }
                 }
             }
 
