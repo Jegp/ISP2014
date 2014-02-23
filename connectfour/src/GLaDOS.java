@@ -62,6 +62,7 @@ public class GLaDOS implements IGameLogic {
 
     /**
      * Tests whether the given player has one on a board with the given last move (column and player).
+     * TODO: This can be optimised if you look 3 either way
      */
     private static Winner gameFinished(int[][] board, int lastMoveColumn) {
         // Test if the first move has been  made
@@ -98,9 +99,32 @@ public class GLaDOS implements IGameLogic {
                 }
             }
 
-            // Vertical
+            coherentFields = 0;
+
+            // Vertical win
+            for (int r = 0; r < board.length - 1; r++) {
+                if (board[lastMoveColumn][r] == playerID) {
+                    coherentFields++;
+                    //System.out.println(coherentFields);
+                    if (coherentFields >= 4) {
+                        if (playerID == 1) {
+                            return Winner.PLAYER1;
+                        } else {
+                            return Winner.PLAYER2;
+                        }
+                    }
+                } else {
+                    if (board[lastMoveColumn][r] > 0) {
+                        playerID = board[lastMoveColumn][r];
+                        coherentFields = 1;
+                    } else {
+                        coherentFields = 0;
+                    }
+                }
+            }
 
             // Diagonal from left to right
+
 
             // Diagonal from right to left
             return Winner.NOT_FINISHED;
