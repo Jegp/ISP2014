@@ -1,3 +1,4 @@
-connectfour/bin
+connectfour/bin/
+*.iml
 *.idea
 *~

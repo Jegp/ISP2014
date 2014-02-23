@@ -19,6 +19,7 @@ public class GLaDOS implements IGameLogic {
 	
     public Winner gameFinished() {
         //TODO Write your implementation for this method
+
         return Winner.NOT_FINISHED;
     }
 
