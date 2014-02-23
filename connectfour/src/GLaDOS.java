@@ -1,11 +1,11 @@
 
-public class GameLogic implements IGameLogic {
+public class GLaDOS implements IGameLogic {
     private int x = 0;
     private int y = 0;
     private int playerID;
     private int[][] gameBoard;
     
-    public GameLogic() {
+    public GLaDOS() {
         //TODO Write your implementation for this method
     }
 	
