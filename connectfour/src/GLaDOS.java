@@ -3,7 +3,6 @@ import java.util.ArrayList;
  * The cake is a lie.
  */
 public class GLaDOS implements IGameLogic {
-
     private int x = 0, y = 0, lastMoveColumn = -1, lastMovePlayer = -1;
     private int playerID;
     private int[][] gameBoard;
@@ -148,5 +147,8 @@ public class GLaDOS implements IGameLogic {
         return 0;
     }
 
+    public interface Heuristic {
+        public float h(int[][] state, Integer lastMove);
+    }
 }
 // vim: set ts=4 sw=4 expandtab:
