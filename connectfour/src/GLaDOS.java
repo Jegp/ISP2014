@@ -18,7 +18,6 @@ public class GLaDOS implements IGameLogic {
 			result.add(i);
 		}
 	}
-	return result;
     }
 
     private Winner gameFinnished(int[][] state, int lastmoveCol) {
@@ -29,10 +28,10 @@ public class GLaDOS implements IGameLogic {
 	    Winner win = gameFinnished(state, lastMove);
 	    if (win == Winner.TIE) {
 		    return 0;
-	    } else if (win.ordinal() +1 == playerID) {
+	    } else if (win.ordinal() == playerID) {
 		    return 1;
 	    } else if (win == Winner.NOT_FINISHED) {
-		    throw new IllegalArgumentException("Faggot");
+		    throw new IlligalArgumentException("Faggot");
 	    } else {
 		   return -1;
 	    }
