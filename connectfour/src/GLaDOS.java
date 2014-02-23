@@ -65,6 +65,8 @@ public class GLaDOS implements IGameLogic {
      * TODO: This can be optimised if you look 3 either way
      */
     private static Winner gameFinished(int[][] board, int lastMoveColumn) {
+        // TODO: Implement recursive function that returns number of successors in each (8) directions
+
         // Test if the first move has been  made
         if (lastMoveColumn != -1) {
             // The player id to examine for coherent fields
@@ -77,7 +79,7 @@ public class GLaDOS implements IGameLogic {
             while (board[lastMoveColumn][row] == 0) { row++; }
 
             // Horizontal win
-            for (int n = 0; n < board[n].length; n++) {
+            for (int n = 0; n < board.length; n++) {
                 //System.out.println(n + " " + row +  " " + playerID + " " + board[n][row]);
                 if (board[n][row] == playerID) {
                     coherentFields++;
@@ -102,7 +104,7 @@ public class GLaDOS implements IGameLogic {
             coherentFields = 0;
 
             // Vertical win
-            for (int r = 0; r < board.length - 1; r++) {
+            for (int r = 0; r < board[0].length; r++) {
                 if (board[lastMoveColumn][r] == playerID) {
                     coherentFields++;
                     //System.out.println(coherentFields);
@@ -124,7 +126,6 @@ public class GLaDOS implements IGameLogic {
             }
 
             // Diagonal from left to right
-
 
             // Diagonal from right to left
             return Winner.NOT_FINISHED;
