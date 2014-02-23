@@ -7,7 +7,7 @@ public class GLaDOS implements IGameLogic {
     private int x = 0, y = 0, lastMoveColumn = -1, lastMovePlayer = -1;
     private int playerID;
     private int[][] gameBoard;
-    
+
     public GLaDOS() {
         //TODO Write your implementation for this method
     }
@@ -55,7 +55,7 @@ public class GLaDOS implements IGameLogic {
         gameBoard = new int[x][y];
         //TODO Write your implementation for this method
     }
-    
+
     public Winner gameFinished() {
         return gameFinished(gameBoard, lastMoveColumn);
     }
