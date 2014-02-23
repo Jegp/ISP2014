@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 
 public class GLaDOS implements IGameLogic {
 
@@ -8,7 +9,47 @@ public class GLaDOS implements IGameLogic {
     public GLaDOS() {
         //TODO Write your implementation for this method
     }
+
+    //TODO expand from center
+    private ArrayList<Integer> generateActions(int[][] state) {
+	ArrayList<Integer> result = new ArrayList();
+	for (int i=0; i < x; i++){
+		if (gameBoard[i][0] == 0) {
+			result.add(i);
+		}
+	}
+	return result;
+    }
+
+    private Winner gameFinnished(int[][] state, int lastmoveCol) {
+
+    }
+
+    private int utility(int[][] state, int lastMove){
+	    Winner win = gameFinnished(state, lastMove);
+	    if (win == Winner.TIE) {
+		    return 0;
+	    } else if (win.ordinal() +1 == playerID) {
+		    return 1;
+	    } else if (win == Winner.NOT_FINISHED) {
+		    throw new IllegalArgumentException("Faggot");
+	    } else {
+		   return -1;
+	    }
+    }
+
+    private int max(int[][] state, int action) {
 	
+    }
+
+    private int min(int[][] state, int action) {
+
+    }
+
+    private int minimax(int[][] state) {
+	
+    }
+
     public void initializeGame(int x, int y, int playerID) {
         this.x = x;
         this.y = y;
@@ -38,3 +79,4 @@ public class GLaDOS implements IGameLogic {
     }
 
 }
+
