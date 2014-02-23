@@ -7,45 +7,44 @@ public class GLaDOS implements IGameLogic {
     private int x = 0, y = 0, lastMoveColumn = -1, lastMovePlayer = -1;
     private int playerID;
     private int[][] gameBoard;
-    
+
     public GLaDOS() {
         //TODO Write your implementation for this method
     }
 
     //TODO expand from center
     private ArrayList<Integer> generateActions(int[][] state) {
-	ArrayList<Integer> result = new ArrayList<Integer>();
-	for (int i=0; i < x; i++){
-		if (gameBoard[i][0] == 0) {
-			result.add(i);
-		}
-	}
-	return result;
+    ArrayList<Integer> result = new ArrayList<Integer>();
+    for (int i=0; i < x; i++){
+        if (gameBoard[i][0] == 0) {
+            result.add(i);
+        }
+    }
+    return result;
     }
 
-    private int utility(int[][] state, int lastMove){
-	    Winner win = gameFinished(state, lastMove);
-	    if (win == Winner.TIE) {
-		    return 0;
-	    } else if (win.ordinal() == playerID) {
-		    return 1;
-	    } else if (win == Winner.NOT_FINISHED) {
-		    throw new IllegalArgumentException("Faggot");
-	    } else {
-		   return -1;
-	    }
+    private int utility(Winner win){
+        if (win == Winner.TIE) {
+            return 0;
+        } else if (win.ordinal() == playerID) {
+            return 1;
+        } else if (win == Winner.NOT_FINISHED) {
+            throw new IllegalArgumentException("Faggot");
+        } else {
+           return -1;
+        }
     }
 
     private int max(int[][] state, int action) {
-	return 0;
+      
     }
 
     private int min(int[][] state, int action) {
-	return 0;
+    return 0;
     }
 
     private int minimax(int[][] state) {
-	return 0;
+    return 0;
     }
 
     public void initializeGame(int x, int y, int playerID) {
@@ -55,7 +54,7 @@ public class GLaDOS implements IGameLogic {
         gameBoard = new int[x][y];
         //TODO Write your implementation for this method
     }
-	
+
     public Winner gameFinished() {
         return gameFinished(gameBoard, lastMoveColumn);
     }
@@ -138,10 +137,10 @@ public class GLaDOS implements IGameLogic {
     public void insertCoin(int column, int playerID) {
         int r = gameBoard[column].length-1;
         while(gameBoard[column][r]!=0) r--;
-        gameBoard[column][r]=playerID;	
+        gameBoard[column][r]=playerID;    
         lastMoveColumn = column;
         lastMovePlayer = playerID;
-        //TODO Write your implementation for this method	
+        //TODO Write your implementation for this method    
     }
 
     public int decideNextMove() {
@@ -150,4 +149,4 @@ public class GLaDOS implements IGameLogic {
     }
 
 }
-
+// vim: set ts=4 sw=4 expandtab:
