@@ -36,7 +36,7 @@ public class GLaDOS implements IGameLogic {
     }
 
     private int max(int[][] state, int action) {
-      
+        return 0;
     }
 
     private int min(int[][] state, int action) {
