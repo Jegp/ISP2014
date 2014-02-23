@@ -3,6 +3,7 @@ public class GameLogic implements IGameLogic {
     private int x = 0;
     private int y = 0;
     private int playerID;
+    private int[][] gameBoard;
     
     public GameLogic() {
         //TODO Write your implementation for this method
@@ -12,6 +13,7 @@ public class GameLogic implements IGameLogic {
         this.x = x;
         this.y = y;
         this.playerID = playerID;
+        gameBoard = new int[x][y];
         //TODO Write your implementation for this method
     }
 	
