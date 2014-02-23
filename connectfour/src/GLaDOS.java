@@ -1,4 +1,6 @@
-
+/**
+ * The cake is a lie.
+ */
 public class GLaDOS implements IGameLogic {
 
     private int x = 0, y = 0, lastMoveColumn = -1, lastMovePlayer = -1;
@@ -18,7 +20,48 @@ public class GLaDOS implements IGameLogic {
     }
 	
     public Winner gameFinished() {
-        if (lastMoveColumn > 0) {
+        return gameFinished(gameBoard, lastMoveColumn);
+    }
+
+    /**
+     * Tests whether the given player has one on a board with the given last move (column and player).
+     */
+    private static Winner gameFinished(int[][] board, int lastMoveColumn) {
+        // Test if the first move has been  made
+        if (lastMoveColumn != -1) {
+            // The player id to examine for coherent fields
+            int playerID = 1;
+            // Number of coherent columns. If >= 4, someone wins!
+            int coherentFields = 0;
+
+            // Find the 'active' row number, where the last coin was placed
+            int row = 0;
+            while (board[lastMoveColumn][row] == 0) { row++; }
+
+            // Horizontal win
+            for (int n = 0; n < board[n].length; n++) {
+                //System.out.println(n + " " + row +  " " + playerID + " " + board[n][row]);
+                if (board[n][row] == playerID) {
+                    coherentFields++;
+                    //System.out.println(coherentFields);
+                    if (coherentFields >= 4) {
+                        if (playerID == 1) {
+                            return Winner.PLAYER1;
+                        } else {
+                            return Winner.PLAYER2;
+                        }
+                    }
+                } else {
+                    if (board[n][row] > 0) playerID = board[n][row];
+                    coherentFields = 0;
+                }
+            }
+
+            // Vertical
+
+            // Diagonal from left to right
+
+            // Diagonal from right to left
             return Winner.NOT_FINISHED;
         } else {
             return Winner.NOT_FINISHED;
