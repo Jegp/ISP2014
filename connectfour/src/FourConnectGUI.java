@@ -200,3 +200,4 @@ public class FourConnectGUI extends JComponent implements MouseListener
 
 }
 
+// vim: set ts=2 sw=2 expandtab:
