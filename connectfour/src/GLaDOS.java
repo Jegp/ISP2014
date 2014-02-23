@@ -23,8 +23,7 @@ public class GLaDOS implements IGameLogic {
     return result;
     }
 
-    private int utility(int[][] state, int lastMove){
-        Winner win = gameFinished(state, lastMove);
+    private int utility(Winner win){
         if (win == Winner.TIE) {
             return 0;
         } else if (win.ordinal() == playerID) {
@@ -37,7 +36,7 @@ public class GLaDOS implements IGameLogic {
     }
 
     private int max(int[][] state, int action) {
-    return 0;
+      
     }
 
     private int min(int[][] state, int action) {
@@ -149,4 +148,4 @@ public class GLaDOS implements IGameLogic {
     }
 
 }
-// vim: set ts=2 sw=2 expandtab:
+// vim: set ts=4 sw=4 expandtab:

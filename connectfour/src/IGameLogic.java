@@ -43,4 +43,4 @@ public interface IGameLogic {
      */
     Winner gameFinished();
 }
-// vim: set ts=2 sw=2 expandtab:
+// vim: set ts=4 sw=4 expandtab:
