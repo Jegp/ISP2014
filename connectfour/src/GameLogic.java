@@ -24,7 +24,9 @@ public class GameLogic implements IGameLogic {
 
 
     public void insertCoin(int column, int playerID) {
-        //TODO Write your implementation for this method	
+        int r = gameBoard[column].length-1;
+        while(gameBoard[column][r]!=0) r--;
+        gameBoard[column][r]=playerID;	
     }
 
     public int decideNextMove() {
