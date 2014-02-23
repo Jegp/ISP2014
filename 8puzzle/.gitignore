@@ -1,0 +1,10 @@
+*.html
+*.js
+*.log
+*.cmake
+*.bc
+*~
+
+CMakeCache.txt
+CMakeFiles/
+Makefile
