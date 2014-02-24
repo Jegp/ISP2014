@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Random;
 /**
  * The cake is a lie.
  */
@@ -144,8 +145,9 @@ public class GLaDOS implements IGameLogic {
     }
 
     public int decideNextMove() {
-        //TODO Write your implementation for this method
-        return 0;
+        Random ran = new Random();
+        
+        return ran.nextInt(x);
     }
 
 }
