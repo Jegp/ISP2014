@@ -1,3 +1,4 @@
+import java.io.Console;
 import java.util.ArrayList;
 import java.util.Random;
 /**
@@ -8,6 +9,7 @@ public class GLaDOS implements IGameLogic {
     private int playerID;
     private int oponentID;
     private int[][] gameBoard;
+    private int statescheack = 0;
 
     public GLaDOS() {
         //TODO Write your implementation for this method
@@ -50,6 +52,7 @@ public class GLaDOS implements IGameLogic {
 
     private int max(int[][] state,int alpha, int beta, int action) {
     	Winner win = gameFinished(state,action);
+    	statescheack++;
     	int y = Integer.MIN_VALUE;
     	if(win != Winner.NOT_FINISHED) {
     		return utility(win);
@@ -65,6 +68,7 @@ public class GLaDOS implements IGameLogic {
     
 
     private int min(int[][] state, int alpha, int beta, int action) {
+    	statescheack++;
     	Winner win = gameFinished(state,action);
     	int y = Integer.MAX_VALUE;
     	if(win != Winner.NOT_FINISHED) {
@@ -82,6 +86,7 @@ public class GLaDOS implements IGameLogic {
 
     private int minimax(int[][] state) {
     	int bestAction = -1;
+    	statescheack = 0;
     	int y = Integer.MIN_VALUE;
     	for (int action : generateActions(state)) {
     		int min = min(result(state,action,playerID),Integer.MIN_VALUE,Integer.MAX_VALUE,action);
@@ -91,6 +96,7 @@ public class GLaDOS implements IGameLogic {
     		}
 			
 		}
+    	System.out.println(statescheack);
     	return bestAction;
     }
     
