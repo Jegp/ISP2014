@@ -184,7 +184,7 @@ public class GLaDOS implements IGameLogic {
             if (upLeft + downRight >= 3) { return getWinner(playerID); }
 
             // Diagonal right to left win
-            int upRight   = subsequentCoins(board, lastMoveColumn, row, -1, -1, playerID);
+            int upRight   = subsequentCoins(board, lastMoveColumn, row,  1, -1, playerID);
             int downLeft  = subsequentCoins(board, lastMoveColumn, row, -1,  1, playerID);
             if (upRight + downLeft >= 3) { return getWinner(playerID); }
 
