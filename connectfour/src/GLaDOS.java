@@ -1,20 +1,19 @@
 import java.io.Console;
 import java.util.ArrayList;
-import java.util.Random;
+
 /**
  * The cake is a lie.
  */
 public class GLaDOS implements IGameLogic {
-    private int x = 0, y = 0, lastMoveColumn = -1, lastMovePlayer = -1;
+    private int x = 0, y = 0, lastMoveColumn = -1;
     private int playerID;
-    private int oponentID;
+    private int opponentID;
     private int[][] gameBoard;
     private int statescheack = 0;
 
     public GLaDOS() {
         //TODO Write your implementation for this method
     }
-
     
     private ArrayList<Integer> generateActions(int[][] state) {
     ArrayList<Integer> result = new ArrayList<Integer>();
@@ -75,7 +74,7 @@ public class GLaDOS implements IGameLogic {
     		return utility(win);
     	} else {
     		for (int newaction : generateActions(state)) {
-    			int max = max(result(state,newaction,oponentID),alpha,beta,newaction);
+    			int max = max(result(state,newaction, opponentID),alpha,beta,newaction);
     			y = Math.min(y,max);
     			if( y <= alpha) return y;
     			beta = Math.min(beta, y);	
@@ -120,9 +119,9 @@ public class GLaDOS implements IGameLogic {
         this.y = y;
         this.playerID = playerID;
         if(playerID == 1) {
-        	oponentID = 2;
+        	opponentID = 2;
         } else {
-        	oponentID = 1;
+        	opponentID = 1;
         }
         gameBoard = new int[x][y];
         //TODO Write your implementation for this method
@@ -133,18 +132,32 @@ public class GLaDOS implements IGameLogic {
     }
 
     /**
+     * Decides how many subsequent coins there are in the direction specified by dx and dy. Does NOT
+     * examine the initial (x, y) position. A call to the function starts in (x + dx, y + dy).
+     */
+    private static int subsequentCoins(int[][] board, int x, int y, int dx, int dy, int playerID) {
+        int newX = x + dx;
+        int newY = y + dy;
+        if ((newX >= 0 && newX < board.length) && (newY >= 0 && newY < board[0].length) && board[newX][newY] == playerID) {
+            return 1 + subsequentCoins(board, newX, newY, dx, dy, playerID);
+        } else {
+            return 0;
+        }
+    }
+
+    /**
+     * Returns the Winner enum from the given number. Bloody enums.
+     */
+    private static Winner getWinner(int playerID) {
+        return playerID == 1 ? Winner.PLAYER1 : Winner.PLAYER2;
+    }
+
+    /**
      * Tests whether the given player has one on a board with the given last move (column and player).
-     * TODO: This can be optimised if you look 3 either way
      */
     private static Winner gameFinished(int[][] board, int lastMoveColumn) {
-        // TODO: Implement recursive function that returns number of successors in each (8) (not up) directions
-
-
-		
         // Test if the first move has been  made
         if (lastMoveColumn != -1) {
-            // The player id to examine for coherent fields
-            int playerID = 1;
             // Number of coherent columns. If >= 4, someone wins!
             int coherentFields = 0;
 
@@ -152,70 +165,37 @@ public class GLaDOS implements IGameLogic {
             int row = 0;
             while (board[lastMoveColumn][row] == 0) { row++; }
 
-            // Horizontal win
-            for (int n = 0; n < board.length; n++) {
-                //System.out.println(n + " " + row +  " " + playerID + " " + board[n][row]);
-                if (board[n][row] == playerID) {
-                    coherentFields++;
-                    //System.out.println(coherentFields);
-                    if (coherentFields >= 4) {
-                        if (playerID == 1) {
-                            return Winner.PLAYER1;
-                        } else {
-                            return Winner.PLAYER2;
-                        }
-                    }
-                } else {
-                    if (board[n][row] > 0) {
-                        playerID = board[n][row];
-                        coherentFields = 1;
-                    } else {
-                        coherentFields = 0;
-                    }
-                }
-            }
+            // The player id to examine for coherent fields
+            int playerID = board[lastMoveColumn][row];
 
-            coherentFields = 0;
+            // Horizontal win
+            int left  = subsequentCoins(board, lastMoveColumn, row, -1, 0, playerID);
+            int right = subsequentCoins(board, lastMoveColumn, row,  1, 0, playerID);
+            if (left + right >= 3) { return getWinner(playerID); }
 
             // Vertical win
-            for (int r = 0; r < board[0].length; r++) {
-                if (board[lastMoveColumn][r] == playerID) {
-                    coherentFields++;
-                    //System.out.println(coherentFields);
-                    if (coherentFields >= 4) {
-                        if (playerID == 1) {
-                            return Winner.PLAYER1;
-                        } else {
-                            return Winner.PLAYER2;
-                        }
-                    }
-                } else {
-                    if (board[lastMoveColumn][r] > 0) {
-                        playerID = board[lastMoveColumn][r];
-                        coherentFields = 1;
-                    } else {
-                        coherentFields = 0;
-                    }
-                }
+            int up   = subsequentCoins(board, lastMoveColumn, row, 0, -1, playerID);
+            int down = subsequentCoins(board, lastMoveColumn, row, 0,  1, playerID);
+            if (up + down >= 3) { return getWinner(playerID); }
+
+            // Diagonal left to right win
+            int upLeft    = subsequentCoins(board, lastMoveColumn, row, -1, -1, playerID);
+            int downRight = subsequentCoins(board, lastMoveColumn, row,  1,  1, playerID);
+            if (upLeft + downRight >= 3) { return getWinner(playerID); }
+
+            // Diagonal right to left win
+            int upRight   = subsequentCoins(board, lastMoveColumn, row, -1, -1, playerID);
+            int downLeft  = subsequentCoins(board, lastMoveColumn, row, -1,  1, playerID);
+            if (upRight + downLeft >= 3) { return getWinner(playerID); }
+
+            // Test for not finished or draw
+            for (int[] aBoard : board) {
+                // Not finished: One of the upper coins are not assigned to a player (0)
+                if (aBoard[0] == 0) return Winner.NOT_FINISHED;
             }
 
-        	Boolean done = true;
-    		for(int i=0; i<board.length; i++) {
-    			  for(int j=0; j<board[i].length; j++) {
-    				  if(board[i][j] == 0) {
-    					 done = false;
-    					 continue;
-    				  }
-    			}
-    			 
-    		}
-    		if(done) {
-    			 return Winner.TIE;
-    		}
-            // Diagonal from left to right
-
-            // Diagonal from right to left
-            return Winner.NOT_FINISHED;
+            // Tie: All the upper coins are assigned, but no winner found.
+            return Winner.TIE;
         } else {
             return Winner.NOT_FINISHED;
         }
@@ -227,7 +207,6 @@ public class GLaDOS implements IGameLogic {
         while(gameBoard[column][r]!=0) r--;
         gameBoard[column][r]=playerID;    
         lastMoveColumn = column;
-        lastMovePlayer = playerID;
         //TODO Write your implementation for this method    
     }
 
