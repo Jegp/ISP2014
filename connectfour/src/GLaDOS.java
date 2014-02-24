@@ -6,19 +6,32 @@ import java.util.Random;
 public class GLaDOS implements IGameLogic {
     private int x = 0, y = 0, lastMoveColumn = -1, lastMovePlayer = -1;
     private int playerID;
+    private int oponentID;
     private int[][] gameBoard;
 
     public GLaDOS() {
         //TODO Write your implementation for this method
     }
 
-    //TODO expand from center
+    
     private ArrayList<Integer> generateActions(int[][] state) {
     ArrayList<Integer> result = new ArrayList<Integer>();
-    for (int i=0; i < x; i++){
-        if (gameBoard[i][0] == 0) {
-            result.add(i);
-        }
+    int middle = x/2;
+  //TODO choose random when x is even
+    if (state[middle][0] == 0) {
+        result.add(middle);
+    }
+    for (int i=1; i <= x/2; i++){
+    	if(middle + i < x) {
+            if (state[middle + i][0] == 0) {
+                result.add(middle + i);
+            }
+    	}
+        if(middle - i > -1) {
+            if (state[middle - i][0] == 0) {
+                result.add(middle - i);
+            }	
+    	}
     }
     return result;
     }
@@ -26,7 +39,7 @@ public class GLaDOS implements IGameLogic {
     private int utility(Winner win){
         if (win == Winner.TIE) {
             return 0;
-        } else if (win.ordinal() == playerID) {
+        } else if (win.ordinal() == playerID -1) {
             return 1;
         } else if (win == Winner.NOT_FINISHED) {
             throw new IllegalArgumentException("Faggot");
@@ -35,22 +48,76 @@ public class GLaDOS implements IGameLogic {
         }
     }
 
-    private int max(int[][] state, int action) {
-        return 0;
+    private int max(int[][] state,int alpha, int beta, int action) {
+    	Winner win = gameFinished(state,action);
+    	int y = Integer.MIN_VALUE;
+    	if(win != Winner.NOT_FINISHED) {
+    		return utility(win);
+    	} else {
+    		for (int newaction : generateActions(state)) {
+    			y = Math.max(y, min(result(state,newaction,playerID),alpha,beta,newaction));
+    			if( y >= beta) return y;
+    			alpha = Math.max(alpha, y);	
+    		}
+    	}
+    	return y;
     }
+    
 
-    private int min(int[][] state, int action) {
-    return 0;
+    private int min(int[][] state, int alpha, int beta, int action) {
+    	Winner win = gameFinished(state,action);
+    	int y = Integer.MAX_VALUE;
+    	if(win != Winner.NOT_FINISHED) {
+    		return utility(win);
+    	} else {
+    		for (int newaction : generateActions(state)) {
+    			int max = max(result(state,newaction,oponentID),alpha,beta,newaction);
+    			y = Math.min(y,max);
+    			if( y <= alpha) return y;
+    			beta = Math.min(beta, y);	
+    		}
+    	}
+    	return y;
     }
 
     private int minimax(int[][] state) {
-    return 0;
+    	int bestAction = -1;
+    	int y = Integer.MIN_VALUE;
+    	for (int action : generateActions(state)) {
+    		int min = min(result(state,action,playerID),Integer.MIN_VALUE,Integer.MAX_VALUE,action);
+    		if(min > y) {
+    			bestAction = action;
+    			y = min;
+    		}
+			
+		}
+    	return bestAction;
+    }
+    
+    private int[][] result(int[][] state, int action, int playerID) {
+		int[][] newstate = new int[x][y];//= state.clone();
+		for(int i=0; i<state.length; i++) {
+			  for(int j=0; j<state[i].length; j++) {
+				  newstate[i][j]=state[i][j]; 
+				  }
+			}
+        int r = y-1;
+        while(newstate[action][r]!=0) {
+        	r--;
+        }
+        newstate[action][r]=playerID;
+    	return newstate;
     }
 
     public void initializeGame(int x, int y, int playerID) {
         this.x = x;
         this.y = y;
         this.playerID = playerID;
+        if(playerID == 1) {
+        	oponentID = 2;
+        } else {
+        	oponentID = 1;
+        }
         gameBoard = new int[x][y];
         //TODO Write your implementation for this method
     }
@@ -64,8 +131,10 @@ public class GLaDOS implements IGameLogic {
      * TODO: This can be optimised if you look 3 either way
      */
     private static Winner gameFinished(int[][] board, int lastMoveColumn) {
-        // TODO: Implement recursive function that returns number of successors in each (8) directions
+        // TODO: Implement recursive function that returns number of successors in each (8) (not up) directions
 
+
+		
         // Test if the first move has been  made
         if (lastMoveColumn != -1) {
             // The player id to examine for coherent fields
@@ -124,6 +193,19 @@ public class GLaDOS implements IGameLogic {
                 }
             }
 
+        	Boolean done = true;
+    		for(int i=0; i<board.length; i++) {
+    			  for(int j=0; j<board[i].length; j++) {
+    				  if(board[i][j] == 0) {
+    					 done = false;
+    					 continue;
+    				  }
+    			}
+    			 
+    		}
+    		if(done) {
+    			 return Winner.TIE;
+    		}
             // Diagonal from left to right
 
             // Diagonal from right to left
@@ -144,9 +226,7 @@ public class GLaDOS implements IGameLogic {
     }
 
     public int decideNextMove() {
-        Random ran = new Random();
-        
-        return ran.nextInt(x);
+    	return minimax(gameBoard);
     }
 
     public interface Heuristic {
