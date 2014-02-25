@@ -1,3 +1,7 @@
+.PHONY: default
+
+default: bin/ShowGame.class bin/GLaDOS.class
+
 bin/ShowGame.class: src/ShowGame.java
 	javac src/ShowGame.java -sourcepath src/ -d bin
 
