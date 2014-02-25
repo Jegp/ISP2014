@@ -10,6 +10,7 @@ public class GLaDOS implements IGameLogic {
     private int opponentID;
     private int[][] gameBoard;
     private int statescheack = 0;
+    private final int CUTOFF = 2; //TODO arbitrary choice of 2
 
     public GLaDOS() {
         //TODO Write your implementation for this method
@@ -37,7 +38,7 @@ public class GLaDOS implements IGameLogic {
     return result;
     }
 
-    private int utility(Winner win){
+    private float utility(Winner win){
         if (win == Winner.TIE) {
             return 0;
         } else if (win.ordinal() == playerID -1) {
@@ -49,15 +50,18 @@ public class GLaDOS implements IGameLogic {
         }
     }
 
-    private int max(int[][] state,int alpha, int beta, int action) {
+    private float max(int[][] state, float alpha, float beta, int action, int cutoff) {
     	Winner win = gameFinished(state,action);
     	statescheack++;
-    	int y = Integer.MIN_VALUE;
+    	float y = Float.MIN_VALUE;
     	if(win != Winner.NOT_FINISHED) {
     		return utility(win);
+        } else if (cutoff == 0) {
+            Heuristic h = new MovesToWin();
+            return h.h(state, action);
     	} else {
     		for (int newaction : generateActions(state)) {
-    			y = Math.max(y, min(result(state,newaction,playerID),alpha,beta,newaction));
+    			y = Math.max(y, min(result(state, newaction, playerID), alpha, beta, newaction, cutoff-1));
     			if( y >= beta) return y;
     			alpha = Math.max(alpha, y);	
     		}
@@ -66,15 +70,18 @@ public class GLaDOS implements IGameLogic {
     }
     
 
-    private int min(int[][] state, int alpha, int beta, int action) {
+    private float min(int[][] state, float alpha, float beta, int action, int cutoff) {
     	statescheack++;
     	Winner win = gameFinished(state,action);
-    	int y = Integer.MAX_VALUE;
+    	float y = Float.MAX_VALUE;
     	if(win != Winner.NOT_FINISHED) {
     		return utility(win);
+        } else if (cutoff == 0) {
+            Heuristic h = new MovesToWin();
+            return h.h(state, action);
     	} else {
     		for (int newaction : generateActions(state)) {
-    			int max = max(result(state,newaction, opponentID),alpha,beta,newaction);
+    			float max = max(result(state,newaction, opponentID),alpha,beta,newaction, cutoff-1);
     			y = Math.min(y,max);
     			if( y <= alpha) return y;
     			beta = Math.min(beta, y);	
@@ -86,9 +93,9 @@ public class GLaDOS implements IGameLogic {
     private int minimax(int[][] state) {
     	int bestAction = -1;
     	statescheack = 0;
-    	int y = Integer.MIN_VALUE;
+    	float y = Float.MIN_VALUE;
     	for (int action : generateActions(state)) {
-    		int min = min(result(state,action,playerID),Integer.MIN_VALUE,Integer.MAX_VALUE,action);
+    		float min = min(result(state, action, playerID), Float.MIN_VALUE, Float.MAX_VALUE, action, CUTOFF);
     		if(min > y) {
     			bestAction = action;
     			y = min;
@@ -211,11 +218,19 @@ public class GLaDOS implements IGameLogic {
     }
 
     public int decideNextMove() {
-    	return minimax(gameBoard);
+    	int res = minimax(gameBoard);
+    	System.out.println("AI move: " + res);
+        return res;
     }
 
     public interface Heuristic {
         public float h(int[][] state, Integer lastMove);
+    }
+
+    public class MovesToWin implements Heuristic {
+        public float h(int[][] state, Integer lastMove){
+            return (float) 0.0;
+        }
     }
 }
 // vim: set ts=4 sw=4 expandtab:
