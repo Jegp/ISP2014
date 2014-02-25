@@ -10,7 +10,7 @@ public class GLaDOS implements IGameLogic {
     private int opponentID;
     private int[][] gameBoard;
     private int statescheack = 0;
-    private final int CUTOFF = 2; //TODO arbitrary choice of 2
+    private final int CUTOFF = 0; //TODO arbitrary choice of 2
 
     public GLaDOS() {
         //TODO Write your implementation for this method
@@ -40,13 +40,13 @@ public class GLaDOS implements IGameLogic {
 
     private float utility(Winner win){
         if (win == Winner.TIE) {
-            return 0;
+            return 0.0f;
         } else if (win.ordinal() == playerID -1) {
-            return 1;
+            return 1.0f;
         } else if (win == Winner.NOT_FINISHED) {
             throw new IllegalArgumentException("Faggot");
         } else {
-           return -1;
+           return -1.0f;
         }
     }
 
@@ -228,8 +228,55 @@ public class GLaDOS implements IGameLogic {
     }
 
     public class MovesToWin implements Heuristic {
+
+        private int row(int[][] state, int lastMove){
+            for(int i=0; i<y; i++){
+                if(state[lastMove][i] != 0){
+                    return i;
+                }
+            }
+            throw new IllegalArgumentException("Illegal move made it to heuristic");
+        }
+
+        private float hTrace(int[][] state, int lastMoveX, int lastMoveY){
+            int freeOrOwned = 0;
+            int owned =0;
+            boolean met = false;
+                System.out.println(lastMoveX);
+                System.out.println(lastMoveY);
+            for(int i = 0; i < x; i++){
+                met = i >= lastMoveX;
+                System.out.println(met);
+                if(state[i][lastMoveY] == 0){
+                    System.out.println("free");
+                    freeOrOwned++;
+                } else if (state[i][lastMoveY] == playerID){
+                    System.out.println("owned");
+                    freeOrOwned++;
+                    owned++;
+                } else {
+                    System.out.println("oponent");
+                    if (met){
+                        return freeOrOwned - owned;
+                    }
+                    freeOrOwned = 0;
+                    owned = 0;
+                }
+            }
+            return freeOrOwned - owned;
+        }
+
         public float h(int[][] state, Integer lastMove){
-            return (float) 0.0;
+            for (int i=0; i<y; i++){
+                System.out.println();
+                for(int j=0; j<x; j++){
+                    System.out.print("" + state[j][i] + ", ");
+                }
+            }
+            System.out.println();
+            System.out.println(hTrace(state, lastMove, row(state, lastMoveColumn)));
+            System.console().readLine();
+            return 2f;
         }
     }
 }
