@@ -12,7 +12,7 @@ public class GLaDOS implements IGameLogic {
     private int statescheack = 0;
 
     public GLaDOS() {
-        //TODO Write your implementation for this method
+        
     }
     
     private ArrayList<Integer> generateActions(int[][] state) {
@@ -58,6 +58,7 @@ public class GLaDOS implements IGameLogic {
     	} else {
     		for (int newaction : generateActions(state)) {
     			y = Math.max(y, min(result(state,newaction,playerID),alpha,beta,newaction));
+    			//tests for possible beta cut 
     			if( y >= beta) return y;
     			alpha = Math.max(alpha, y);	
     		}
@@ -68,14 +69,18 @@ public class GLaDOS implements IGameLogic {
 
     private int min(int[][] state, int alpha, int beta, int action) {
     	statescheack++;
-    	Winner win = gameFinished(state,action);
     	int y = Integer.MAX_VALUE;
+    	
+    	Winner win = gameFinished(state,action);
+    	
+    	//If the state is a finished state
     	if(win != Winner.NOT_FINISHED) {
     		return utility(win);
     	} else {
     		for (int newaction : generateActions(state)) {
     			int max = max(result(state,newaction, opponentID),alpha,beta,newaction);
     			y = Math.min(y,max);
+    			//tests for possible alpha cut 
     			if( y <= alpha) return y;
     			beta = Math.min(beta, y);	
     		}
@@ -86,16 +91,23 @@ public class GLaDOS implements IGameLogic {
     private int minimax(int[][] state) {
     	int bestAction = -1;
     	statescheack = 0;
+    	System.out.println("go");
     	int y = Integer.MIN_VALUE;
+    	
+    	//Generate the valid actions start state
     	for (int action : generateActions(state)) {
-    		int min = min(result(state,action,playerID),Integer.MIN_VALUE,Integer.MAX_VALUE,action);
-    		if(min > y) {
+    		int max = min(result(state,action,playerID),Integer.MIN_VALUE,Integer.MAX_VALUE,action);
+    		System.out.println("states: " + statescheack);
+    		//If the current action is better than the previous ones, choose this
+    		if(max > y) {
     			bestAction = action;
-    			y = min;
+    			y = max;
     		}
 			
 		}
-    	System.out.println(statescheack);
+    	System.out.println("states: " + statescheack);
+    	System.out.println("h - value: " + y);
+    	System.out.println("move: " + bestAction);
     	return bestAction;
     }
     
@@ -124,7 +136,7 @@ public class GLaDOS implements IGameLogic {
         	opponentID = 1;
         }
         gameBoard = new int[x][y];
-        //TODO Write your implementation for this method
+        
     }
 
     public Winner gameFinished() {
@@ -169,6 +181,8 @@ public class GLaDOS implements IGameLogic {
             int playerID = board[lastMoveColumn][row];
 
             // Horizontal win
+            //TODO Maybe end search if left is above 3, just to make it terminate faster
+            //TODO Maybe start with Vertical win, since these should be more common?
             int left  = subsequentCoins(board, lastMoveColumn, row, -1, 0, playerID);
             int right = subsequentCoins(board, lastMoveColumn, row,  1, 0, playerID);
             if (left + right >= 3) { return getWinner(playerID); }
@@ -184,7 +198,7 @@ public class GLaDOS implements IGameLogic {
             if (upLeft + downRight >= 3) { return getWinner(playerID); }
 
             // Diagonal right to left win
-            int upRight   = subsequentCoins(board, lastMoveColumn, row, -1, -1, playerID);
+            int upRight   = subsequentCoins(board, lastMoveColumn, row,  1, -1, playerID);
             int downLeft  = subsequentCoins(board, lastMoveColumn, row, -1,  1, playerID);
             if (upRight + downLeft >= 3) { return getWinner(playerID); }
 
@@ -206,8 +220,7 @@ public class GLaDOS implements IGameLogic {
         int r = gameBoard[column].length-1;
         while(gameBoard[column][r]!=0) r--;
         gameBoard[column][r]=playerID;    
-        lastMoveColumn = column;
-        //TODO Write your implementation for this method    
+        lastMoveColumn = column; 
     }
 
     public int decideNextMove() {
