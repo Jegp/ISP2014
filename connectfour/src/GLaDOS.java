@@ -15,10 +15,6 @@ public class GLaDOS implements IGameLogic {
     private int statescheack = 0, cutoffs = 0;
     private boolean hasReachedMaxDepth;
 
-    public GLaDOS() {
-        
-    }
-    
     private ArrayList<Integer> generateActions(int[][] state) {
     ArrayList<Integer> result = new ArrayList<Integer>();
     int middle = x/2;
@@ -41,15 +37,15 @@ public class GLaDOS implements IGameLogic {
     return result;
     }
 
-    private int utility(Winner win){
+    private float utility(Winner win){
         if (win == Winner.TIE) {
-            return 0;
+            return 0.0f;
         } else if (win.ordinal() == playerID -1) {
-            return 1;
+            return 1.0f;
         } else if (win == Winner.NOT_FINISHED) {
             throw new IllegalArgumentException("Faggot");
         } else {
-           return -1;
+           return -1.0f;
         }
     }
 
@@ -169,7 +165,6 @@ public class GLaDOS implements IGameLogic {
         	opponentID = 1;
         }
         gameBoard = new int[x][y];
-        
     }
 
     public Winner gameFinished() {
@@ -248,7 +243,6 @@ public class GLaDOS implements IGameLogic {
         }
     }
 
-    
     public void insertCoin(int column, int playerID) {
         int r = gameBoard[column].length-1;
         while(gameBoard[column][r]!=0) r--;
@@ -264,7 +258,6 @@ public class GLaDOS implements IGameLogic {
     public interface Heuristic {
         public float h(int[][] state, Integer lastMove);
     }
-    
     public class MovesToWin implements Heuristic {
 
         private int row(int[][] state, int lastMove){
@@ -280,8 +273,8 @@ public class GLaDOS implements IGameLogic {
             int freeOrOwned = 0;
             int owned =0;
             boolean met = false;
-             //   System.out.println(lastMoveX);
-             //   System.out.println(lastMoveY);
+                System.out.println(lastMoveX);
+                System.out.println(lastMoveY);
             for(int i = 0; i < x; i++){
                 met = i >= lastMoveX;
                 System.out.println(met);
@@ -289,11 +282,11 @@ public class GLaDOS implements IGameLogic {
                     System.out.println("free");
                     freeOrOwned++;
                 } else if (state[i][lastMoveY] == playerID){
-               //     System.out.println("owned");
+                    System.out.println("owned");
                     freeOrOwned++;
                     owned++;
                 } else {
-               //     System.out.println("oponent");
+                    System.out.println("oponent");
                     if (met){
                         return freeOrOwned - owned;
                     }
@@ -306,14 +299,15 @@ public class GLaDOS implements IGameLogic {
 
         public float h(int[][] state, Integer lastMove){
             for (int i=0; i<y; i++){
-              //  System.out.println();
+                System.out.println();
                 for(int j=0; j<x; j++){
-              //      System.out.print("" + state[j][i] + ", ");
+                    System.out.print("" + state[j][i] + ", ");
                 }
             }
-            //System.out.println();
-            //System.out.println(hTrace(state, lastMove, row(state, lastMoveColumn)));
-            return 0.9f;
+            System.out.println();
+            System.out.println(hTrace(state, lastMove, row(state, lastMoveColumn)));
+            System.console().readLine();
+            return 2f;
         }
     }
 }
