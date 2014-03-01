@@ -21,17 +21,17 @@ public class GLaDOS implements IGameLogic {
     ArrayList<Integer> result = new ArrayList<Integer>();
     int middle = x/2;
   //TODO choose random when x is even
-    if (gameBoard.height[middle] == (byte) (gameBoard.H1 * middle)) {
+    if (state.height[middle] == (byte) (state.H1 * middle)) {
         result.add(middle);
     }
     for (int i=1; i <= x/2; i++){
     	if(middle + i < x) {
-            if (gameBoard.height[middle + i] == (byte) (gameBoard.H1 * (middle + i))) {
+            if (state.height[middle + i] == (byte) (state.H1 * (middle + i))) {
                 result.add(middle + i);
             }
     	}
         if(middle - i > -1) {
-            if (gameBoard.height[middle - i] == (byte) (gameBoard.H1 * (middle - i))) {
+            if (state.height[middle - i] == (byte) (state.H1 * (middle - i))) {
                 result.add(middle - i);
             }	
     	}
