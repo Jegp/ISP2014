@@ -13,24 +13,20 @@ public class GLaDOS implements IGameLogic {
     private int statescheack = 0, cutoffs = 0;
     private boolean hasReachedMaxDepth;
 
-    public GLaDOS() {
-
-    }
-
     private ArrayList<Integer> generateActions(int[][] state) {
         ArrayList<Integer> result = new ArrayList<Integer>();
-        int middle = x / 2;
+        int middle = x/2;
         // TODO choose random when x is even
         if (state[middle][0] == 0) {
             result.add(middle);
         }
-        for (int i = 1; i <= x / 2; i++) {
-            if (middle + i < x) {
-                if (state[middle + i][0] == 0) {
+        for (int i = 1; i <= x/2; i++) {
+            if(middle + i < x) {
+                if(state[middle + i][0] == 0) {
                     result.add(middle + i);
                 }
             }
-            if (middle - i > -1) {
+            if(middle - i > -1) {
                 if (state[middle - i][0] == 0) {
                     result.add(middle - i);
                 }
@@ -39,20 +35,19 @@ public class GLaDOS implements IGameLogic {
         return result;
     }
 
-    private int utility(Winner win) {
+    private float utility(Winner win){
         if (win == Winner.TIE) {
-            return 0;
-        } else if (win.ordinal() == playerID - 1) {
-            return 1;
+            return 0.0f;
+        } else if (win.ordinal() == playerID -1) {
+            return 1.0f;
         } else if (win == Winner.NOT_FINISHED) {
             throw new IllegalArgumentException("Faggot");
         } else {
-            return -1;
+           return -1.0f;
         }
     }
 
-    private float max(int[][] state, float alpha, float beta, int action,
-            int depth) {
+    private float max(int[][] state,float alpha,float beta,int action,int depth) {
         Winner win = gameFinished(state, action);
         statescheack++;
         float y = Integer.MIN_VALUE;
@@ -61,14 +56,10 @@ public class GLaDOS implements IGameLogic {
             MovesToWin h = new MovesToWin();
             return h.h(state, action);
         }
-        if (win != Winner.NOT_FINISHED)
-            return utility(win);
+        if (win != Winner.NOT_FINISHED) return utility(win);
 
         for (int newaction : generateActions(state)) {
-            y = Math.max(
-                    y,
-                    min(result(state, newaction, playerID), alpha, beta,
-                            newaction, depth - 1));
+            y = Math.max(y,min(result(state, newaction, playerID), alpha, beta,newaction, depth - 1));
             // tests for possible beta cut
             if (y >= beta) {
                 cutoffs++;
@@ -80,7 +71,7 @@ public class GLaDOS implements IGameLogic {
         return y;
     }
 
-    private float min(int[][] state, float alpha, float beta, int action,
+    private float min(int[][] state,float alpha,float beta,int action,
             int depth) {
         statescheack++;
         float y = Integer.MAX_VALUE;
@@ -136,8 +127,7 @@ public class GLaDOS implements IGameLogic {
         for (int action : generateActions(state)) {
             float max = min(result(state, action, playerID), Integer.MIN_VALUE,
                     Integer.MAX_VALUE, action, depth - 1);
-            // If the current action is better than the previous ones, choose
-            // this
+            // If the current action is better than the previous ones, choose this
             if (max > y) {
                 bestAction = action;
                 y = max;
@@ -153,17 +143,17 @@ public class GLaDOS implements IGameLogic {
     }
 
     private int[][] result(int[][] state, int action, int playerID) {
-        int[][] newstate = new int[x][y];// = state.clone();
-        for (int i = 0; i < state.length; i++) {
+        int[][] newstate = new int[x][y];
+        for (int i = 0; i <state.length; i++) {
             for (int j = 0; j < state[i].length; j++) {
                 newstate[i][j] = state[i][j];
             }
         }
         int r = y - 1;
-        while (newstate[action][r] != 0) {
+        while(newstate[action][r] != 0) {
             r--;
         }
-        newstate[action][r] = playerID;
+        newstate[action][r]=playerID;
         return newstate;
     }
 
@@ -171,13 +161,12 @@ public class GLaDOS implements IGameLogic {
         this.x = x;
         this.y = y;
         this.playerID = playerID;
-        if (playerID == 1) {
+        if(playerID == 1) {
             opponentID = 2;
         } else {
             opponentID = 1;
         }
         gameBoard = new int[x][y];
-
     }
 
     public Winner gameFinished() {
@@ -233,37 +222,29 @@ public class GLaDOS implements IGameLogic {
             // terminate faster
             // TODO Maybe start with Vertical win, since these should be more
             // common?
-            int left = subsequentCoins(board, lastMoveColumn, row, -1, 0,
-                    playerID);
-            int right = subsequentCoins(board, lastMoveColumn, row, 1, 0,
-                    playerID);
+            int left = subsequentCoins(board, lastMoveColumn, row, -1, 0,playerID);
+            int right = subsequentCoins(board, lastMoveColumn, row, 1, 0,playerID);
             if (left + right >= 3) {
                 return getWinner(playerID);
             }
 
             // Vertical win
-            int up = subsequentCoins(board, lastMoveColumn, row, 0, -1,
-                    playerID);
-            int down = subsequentCoins(board, lastMoveColumn, row, 0, 1,
-                    playerID);
+            int up = subsequentCoins(board, lastMoveColumn, row, 0, -1,playerID);
+            int down = subsequentCoins(board, lastMoveColumn, row, 0, 1, playerID);
             if (up + down >= 3) {
                 return getWinner(playerID);
             }
 
             // Diagonal left to right win
-            int upLeft = subsequentCoins(board, lastMoveColumn, row, -1, -1,
-                    playerID);
-            int downRight = subsequentCoins(board, lastMoveColumn, row, 1, 1,
-                    playerID);
+            int upLeft = subsequentCoins(board, lastMoveColumn, row, -1, -1,playerID);
+            int downRight = subsequentCoins(board, lastMoveColumn, row, 1, 1,playerID);
             if (upLeft + downRight >= 3) {
                 return getWinner(playerID);
             }
 
             // Diagonal right to left win
-            int upRight = subsequentCoins(board, lastMoveColumn, row, 1, -1,
-                    playerID);
-            int downLeft = subsequentCoins(board, lastMoveColumn, row, -1, 1,
-                    playerID);
+            int upRight = subsequentCoins(board, lastMoveColumn, row, 1, -1,playerID);
+            int downLeft = subsequentCoins(board, lastMoveColumn, row, -1, 1,playerID);
             if (upRight + downLeft >= 3) {
                 return getWinner(playerID);
             }
@@ -299,38 +280,36 @@ public class GLaDOS implements IGameLogic {
     public interface Heuristic {
         public float h(int[][] state, Integer lastMove);
     }
-
     public class MovesToWin implements Heuristic {
 
-        private int row(int[][] state, int lastMove) {
-            for (int i = 0; i < y; i++) {
-                if (state[lastMove][i] != 0) {
+        private int row(int[][] state, int lastMove){
+            for(int i=0; i<y; i++){
+                if(state[lastMove][i] != 0){
                     return i;
                 }
             }
-            throw new IllegalArgumentException(
-                    "Illegal move made it to heuristic");
+            throw new IllegalArgumentException("Illegal move made it to heuristic");
         }
 
-        private float hTrace(int[][] state, int lastMoveX, int lastMoveY) {
+        private float hTrace(int[][] state, int lastMoveX, int lastMoveY){
             int freeOrOwned = 0;
-            int owned = 0;
+            int owned =0;
             boolean met = false;
-            // System.out.println(lastMoveX);
-            // System.out.println(lastMoveY);
-            for (int i = 0; i < x; i++) {
+                System.out.println(lastMoveX);
+                System.out.println(lastMoveY);
+            for(int i = 0; i < x; i++){
                 met = i >= lastMoveX;
                 System.out.println(met);
-                if (state[i][lastMoveY] == 0) {
+                if(state[i][lastMoveY] == 0){
                     System.out.println("free");
                     freeOrOwned++;
-                } else if (state[i][lastMoveY] == playerID) {
-                    // System.out.println("owned");
+                } else if (state[i][lastMoveY] == playerID){
+                    System.out.println("owned");
                     freeOrOwned++;
                     owned++;
                 } else {
-                    // System.out.println("oponent");
-                    if (met) {
+                    System.out.println("oponent");
+                    if (met){
                         return freeOrOwned - owned;
                     }
                     freeOrOwned = 0;
@@ -340,17 +319,17 @@ public class GLaDOS implements IGameLogic {
             return freeOrOwned - owned;
         }
 
-        public float h(int[][] state, Integer lastMove) {
-            for (int i = 0; i < y; i++) {
-                // System.out.println();
-                for (int j = 0; j < x; j++) {
-                    // System.out.print("" + state[j][i] + ", ");
+        public float h(int[][] state, Integer lastMove){
+            for (int i=0; i<y; i++){
+                System.out.println();
+                for(int j=0; j<x; j++){
+                    System.out.print("" + state[j][i] + ", ");
                 }
             }
-            // System.out.println();
-            // System.out.println(hTrace(state, lastMove, row(state,
-            // lastMoveColumn)));
-            return 0.9f;
+            System.out.println();
+            System.out.println(hTrace(state, lastMove, row(state, lastMoveColumn)));
+            System.console().readLine();
+            return 2f;
         }
     }
 }
