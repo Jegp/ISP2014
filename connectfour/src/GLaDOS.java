@@ -189,12 +189,13 @@ public class GLaDOS implements IGameLogic {
     public class MovesToWin implements Heuristic {
 
         private int row(LongBoard state, int lastMove){
-            for(int i=0; i<y; i++){
-                if(state.boards[lastMove] != 0){ // TODO: This is not working
-                    return i;
-                }
-            }
-            throw new IllegalArgumentException("Illegal move made it to heuristic");
+            //for(int i=0; i<y; i++){
+                //if(state.boards[lastMove] != 0){ // TODO: This is not working
+                //    return i;
+                //}
+            //}
+            return 0;
+            //throw new IllegalArgumentException("Illegal move made it to heuristic");
         }
 
         private float hTrace(LongBoard state, int lastMoveX, int lastMoveY){
@@ -236,7 +237,7 @@ public class GLaDOS implements IGameLogic {
             }
             System.out.println();
             System.out.println(hTrace(state, lastMove, row(state, lastMoveColumn)));
-            System.console().readLine();
+            //System.console().readLine();
             return 2f;
         }
     }
@@ -300,7 +301,6 @@ public class GLaDOS implements IGameLogic {
 
         void move(int column) {
             boards[player & 1] ^= 1L << height[column];
-            System.out.println(boards[player & 1]);
             player++;
         }
 
