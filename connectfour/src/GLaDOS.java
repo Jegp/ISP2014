@@ -1,11 +1,17 @@
 import java.io.Console;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.io.FileReader;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 /**
  * The cake is a lie. Awesome quote from exercise description: 'Finally, it is
  * not recommended to write all the code in a single class e class.'
  */
 public class GLaDOS implements IGameLogic {
+    private HashMap<String, Float> knowledgeBase;
     private int x = 0, y = 0, lastMoveColumn = -1;
     private int playerID;
     private int opponentID;
@@ -13,10 +19,6 @@ public class GLaDOS implements IGameLogic {
     private int statescheack = 0, cutoffs = 0;
     private boolean hasReachedMaxDepth;
 
-    public GLaDOS() {
-        
-    }
-    
     private ArrayList<Integer> generateActions(LongBoard state) {
     ArrayList<Integer> result = new ArrayList<Integer>();
     int middle = x/2;
@@ -162,6 +164,9 @@ public class GLaDOS implements IGameLogic {
             opponentID = 1;
         }
         gameBoard = new LongBoard(x, y);
+        if (x == 7 && y == 6){
+            initKnowledge();
+        }
     }
 
     public Winner gameFinished() {
@@ -304,6 +309,24 @@ public class GLaDOS implements IGameLogic {
             player++;
         }
 
+    }
+
+    private void initKnowledge(){
+        knowledgeBase = new HashMap<String, Float>();
+        try {
+            BufferedReader br = new BufferedReader(new FileReader("connect-4.data"));
+            String line;
+            while ((line = br.readLine()) != null){
+                int commaIdx = line.lastIndexOf(",");
+                knowledgeBase.put(line.substring(0, commaIdx), Float.parseFloat(line.substring(commaIdx+1)));
+            }
+            br.close();
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("Why you no have connect-4.data in folder?");
+        } catch (IOException e) {
+            throw new RuntimeException("Some IO went wrong me thinks");
+        }
+        System.out.println("lars");
     }
 }
 // vim: set ts=4 sw=4 expandtab:
