@@ -2,10 +2,8 @@ import java.io.Console;
 import java.util.ArrayList;
 
 /**
- * The cake is a lie.
- * Awesome quote from exercise description: 
- * 'Finally, it is not recommended to write all the code in a single class
-e class.'
+ * The cake is a lie. Awesome quote from exercise description: 'Finally, it is
+ * not recommended to write all the code in a single class e class.'
  */
 public class GLaDOS implements IGameLogic {
     private int x = 0, y = 0, lastMoveColumn = -1;
@@ -41,15 +39,15 @@ public class GLaDOS implements IGameLogic {
     return result;
     }
 
-    private int utility(Winner win){
+    private float utility(Winner win){
         if (win == Winner.TIE) {
-            return 0;
+            return 0.0f;
         } else if (win.ordinal() == playerID -1) {
-            return 1;
+            return 1.0f;
         } else if (win == Winner.NOT_FINISHED) {
             throw new IllegalArgumentException("Faggot");
         } else {
-           return -1;
+           return -1.0f;
         }
     }
 
@@ -64,59 +62,63 @@ public class GLaDOS implements IGameLogic {
     	}
     	if(win != Winner.NOT_FINISHED) return utility(win);
 
-    	for (int newaction : generateActions(state)) {
-			y = Math.max(y, min(result(state,newaction,playerID),alpha,beta,newaction,depth-1));
-			//tests for possible beta cut 
-			if( y >= beta) {
-				cutoffs++;
-				return y;
-			}
-			alpha = Math.max(alpha, y);	
-		
-    	}
-    	return y;
+        for (int newaction : generateActions(state)) {
+            y = Math.max(y,min(result(state, newaction, playerID), alpha, beta,newaction, depth - 1));
+            // tests for possible beta cut
+            if (y >= beta) {
+                cutoffs++;
+                return y;
+            }
+            alpha = Math.max(alpha, y);
+
+        }
+        return y;
     }
     
 
-    private float min(LongBoard state, float alpha, float beta, int action, int depth) {
-    	statescheack++;
-    	float y = Integer.MAX_VALUE;
-    	
-    	Winner win = gameFinished(state);
-    	
-    	if(depth == 0) {
-    		hasReachedMaxDepth = true;
-    		MovesToWin h = new MovesToWin();
-    		return h.h(state, action);
-    	}
-    	//If the state is a finished state
-    	if(win != Winner.NOT_FINISHED) return utility(win);
+    private float min(LongBoard state,float alpha,float beta,int action,
+            int depth) {
+        statescheack++;
+        float y = Integer.MAX_VALUE;
 
-    	
-		for (int newaction : generateActions(state)) {
-			y = Math.min(y,max(result(state,newaction, opponentID),alpha,beta,newaction,depth-1));
-			//tests for possible alpha cut 
-			if( y <= alpha) {
-				cutoffs++;
-				return y;
-			}
-			beta = Math.min(beta, y);	
-    	}
-    	return y;
+        Winner win = gameFinished(state);
+
+        if (depth == 0) {
+            hasReachedMaxDepth = true;
+            MovesToWin h = new MovesToWin();
+            return h.h(state, action);
+        }
+        // If the state is a finished state
+        if (win != Winner.NOT_FINISHED)
+            return utility(win);
+
+        for (int newaction : generateActions(state)) {
+            y = Math.min(
+                    y,
+                    max(result(state, newaction, opponentID), alpha, beta,
+                            newaction, depth - 1));
+            // tests for possible alpha cut
+            if (y <= alpha) {
+                cutoffs++;
+                return y;
+            }
+            beta = Math.min(beta, y);
+        }
+        return y;
     }
 
-    //Iterative 
+    // Iterative
     public int iterativeSearch() {
-    	int i = 0;
-    	int move =-1;
-    	hasReachedMaxDepth = true;
-    	//TODO stop if we find a sure win util = 1;
-    	//TODO make stop after x sec. maybe with an exception
-    	while(i < 11 && hasReachedMaxDepth) {
-    		System.out.println("depth: " + i);
-    		move = minimax(gameBoard, ++i);
-    	}
-    	return move;
+        int i = 0;
+        int move = -1;
+        hasReachedMaxDepth = true;
+        // TODO stop if we find a sure win util = 1;
+        // TODO make stop after x sec. maybe with an exception
+        while (i < 11 && hasReachedMaxDepth) {
+            System.out.println("depth: " + i);
+            move = minimax(gameBoard, ++i);
+        }
+        return move;
     }
     
     private int minimax(LongBoard state, int depth) {
@@ -155,12 +157,11 @@ public class GLaDOS implements IGameLogic {
         this.y = y;
         this.playerID = playerID;
         if(playerID == 1) {
-        	opponentID = 2;
+            opponentID = 2;
         } else {
-        	opponentID = 1;
+            opponentID = 1;
         }
         gameBoard = new LongBoard(x, y);
-        
     }
 
     public Winner gameFinished() {
@@ -178,14 +179,13 @@ public class GLaDOS implements IGameLogic {
     }
 
     public int decideNextMove() {
-    	return iterativeSearch();
-    	//return minimax(gameBoard,2);
+        return iterativeSearch();
+        // return minimax(gameBoard,2);
     }
 
     public interface Heuristic {
         public float h(LongBoard state, Integer lastMove);
     }
-    
     public class MovesToWin implements Heuristic {
 
         private int row(LongBoard state, int lastMove){
@@ -211,11 +211,11 @@ public class GLaDOS implements IGameLogic {
                     System.out.println("free");
                     freeOrOwned++;
                 } else if (state[i][lastMoveY] == playerID){
-               //     System.out.println("owned");
+                    System.out.println("owned");
                     freeOrOwned++;
                     owned++;
                 } else {
-               //     System.out.println("oponent");
+                    System.out.println("oponent");
                     if (met){
                         return freeOrOwned - owned;
                     }
@@ -229,14 +229,15 @@ public class GLaDOS implements IGameLogic {
 
         public float h(LongBoard state, Integer lastMove){
             for (int i=0; i<y; i++){
-              //  System.out.println();
+                System.out.println();
                 for(int j=0; j<x; j++){
-              //      System.out.print("" + state[j][i] + ", ");
+                    //System.out.print("" + state[j][i] + ", ");
                 }
             }
-            //System.out.println();
-            //System.out.println(hTrace(state, lastMove, row(state, lastMoveColumn)));
-            return 0.9f;
+            System.out.println();
+            System.out.println(hTrace(state, lastMove, row(state, lastMoveColumn)));
+            System.console().readLine();
+            return 2f;
         }
     }
 
