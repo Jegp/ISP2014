@@ -18,6 +18,9 @@ public class GLaDOS implements IGameLogic {
     private LongBoard gameBoard;
     private int statescheack = 0, cutoffs = 0;
     private boolean hasReachedMaxDepth;
+    //for search in knowledge base
+    private int startDepth = 8;
+    private Heuristic H;
 
     private ArrayList<Integer> generateActions(LongBoard state) {
     ArrayList<Integer> result = new ArrayList<Integer>();
@@ -41,6 +44,10 @@ public class GLaDOS implements IGameLogic {
     return result;
     }
 
+    private float h(LongBoard state, Integer winner){
+        return H.h(state, winner);
+    }
+
     private float utility(Winner win){
         if (win == Winner.TIE) {
             return 0.0f;
@@ -57,10 +64,9 @@ public class GLaDOS implements IGameLogic {
         Winner win = gameFinished(state);
         statescheack++;
         float y = Integer.MIN_VALUE;
-        if(depth == 0) { 
+        if(depth == 0) {
             hasReachedMaxDepth = true;
-            MovesToWin h = new MovesToWin();
-            return h.h(state, action);
+            return h(state, action);
         }
         if(win != Winner.NOT_FINISHED) return utility(win);
 
@@ -76,7 +82,6 @@ public class GLaDOS implements IGameLogic {
         }
         return y;
     }
-    
 
     private float min(LongBoard state,float alpha,float beta,int action,
             int depth) {
@@ -87,8 +92,7 @@ public class GLaDOS implements IGameLogic {
 
         if (depth == 0) {
             hasReachedMaxDepth = true;
-            MovesToWin h = new MovesToWin();
-            return h.h(state, action);
+            return h(state, action);
         }
         // If the state is a finished state
         if (win != Winner.NOT_FINISHED)
@@ -109,6 +113,12 @@ public class GLaDOS implements IGameLogic {
         return y;
     }
 
+    // knowledge!
+    public int knowledgeSearch() {
+        hasReachedMaxDepth = true;
+        return minimax(gameBoard, startDepth--);
+    }
+
     // Iterative
     public int iterativeSearch() {
         int i = 0;
@@ -122,13 +132,12 @@ public class GLaDOS implements IGameLogic {
         }
         return move;
     }
-    
+
     private int minimax(LongBoard state, int depth) {
         int bestAction = -1;
         statescheack = 0;
-        cutoffs = 0;
         float y = Integer.MIN_VALUE;
-        
+ 
         hasReachedMaxDepth = false;
         //Generate the valid actions from the start state
         for (int action : generateActions(state)) {
@@ -138,7 +147,7 @@ public class GLaDOS implements IGameLogic {
                 bestAction = action;
                 y = max;
             }
-            
+
         }
         System.out.println("States: " + statescheack);
         System.out.println("Cutoffs; "+ cutoffs);
@@ -165,7 +174,10 @@ public class GLaDOS implements IGameLogic {
         }
         gameBoard = new LongBoard(x, y);
         if (x == 7 && y == 6){
+            H = new baseLookUp();
             initKnowledge();
+        } else {
+            H = new MovesToWin();
         }
     }
 
@@ -184,14 +196,20 @@ public class GLaDOS implements IGameLogic {
     }
 
     public int decideNextMove() {
-        return iterativeSearch();
-        // return minimax(gameBoard,2);
+        return knowledgeSearch();
     }
 
     public interface Heuristic {
         public float h(LongBoard state, Integer lastMove);
     }
-    public class MovesToWin implements Heuristic {
+
+    private class baseLookUp implements Heuristic {
+        public float h(LongBoard state, Integer ignored_var) {
+            return 1f;
+        }
+    }
+
+    private class MovesToWin implements Heuristic {
 
         private int row(LongBoard state, int lastMove){
             //for(int i=0; i<y; i++){
@@ -311,6 +329,7 @@ public class GLaDOS implements IGameLogic {
 
     }
 
+    //initialize knowledge base from file
     private void initKnowledge(){
         knowledgeBase = new HashMap<String, Float>();
         try {
