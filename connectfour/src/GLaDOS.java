@@ -27,16 +27,16 @@ public class GLaDOS implements IGameLogic {
         result.add(middle);
     }
     for (int i=1; i <= x/2; i++){
-    	if(middle + i < x) {
+        if(middle + i < x) {
             if (state.height[middle + i] == (byte) (state.H1 * (middle + i))) {
                 result.add(middle + i);
             }
-    	}
+        }
         if(middle - i > -1) {
             if (state.height[middle - i] == (byte) (state.H1 * (middle - i))) {
                 result.add(middle - i);
-            }	
-    	}
+            }    
+        }
     }
     return result;
     }
@@ -54,15 +54,15 @@ public class GLaDOS implements IGameLogic {
     }
 
     private float max(LongBoard state,float alpha, float beta, int action, int depth) {
-    	Winner win = gameFinished(state);
-    	statescheack++;
-    	float y = Integer.MIN_VALUE;
-    	if(depth == 0) { 
-    		hasReachedMaxDepth = true;
-    		MovesToWin h = new MovesToWin();
-    		return h.h(state, action);
-    	}
-    	if(win != Winner.NOT_FINISHED) return utility(win);
+        Winner win = gameFinished(state);
+        statescheack++;
+        float y = Integer.MIN_VALUE;
+        if(depth == 0) { 
+            hasReachedMaxDepth = true;
+            MovesToWin h = new MovesToWin();
+            return h.h(state, action);
+        }
+        if(win != Winner.NOT_FINISHED) return utility(win);
 
         for (int newaction : generateActions(state)) {
             y = Math.max(y,min(result(state, newaction, playerID), alpha, beta,newaction, depth - 1));
@@ -124,33 +124,33 @@ public class GLaDOS implements IGameLogic {
     }
     
     private int minimax(LongBoard state, int depth) {
-    	int bestAction = -1;
-    	statescheack = 0;
-    	cutoffs = 0;
-    	float y = Integer.MIN_VALUE;
-    	
-    	hasReachedMaxDepth = false;
-    	//Generate the valid actions from the start state
-    	for (int action : generateActions(state)) {
-    		float max = min(result(state,action,playerID),Integer.MIN_VALUE,Integer.MAX_VALUE,action,depth-1);
-    		//If the current action is better than the previous ones, choose this
-    		if(max > y) {
-    			bestAction = action;
-    			y = max;
-    		}
-			
-		}
-    	System.out.println("States: " + statescheack);
-    	System.out.println("Cutoffs; "+ cutoffs);
-    	System.out.println("H - value: " + y);
-    	System.out.println("Move: " + bestAction);
-    	System.out.println();
-    	return bestAction;
+        int bestAction = -1;
+        statescheack = 0;
+        cutoffs = 0;
+        float y = Integer.MIN_VALUE;
+        
+        hasReachedMaxDepth = false;
+        //Generate the valid actions from the start state
+        for (int action : generateActions(state)) {
+            float max = min(result(state,action,playerID),Integer.MIN_VALUE,Integer.MAX_VALUE,action,depth-1);
+            //If the current action is better than the previous ones, choose this
+            if(max > y) {
+                bestAction = action;
+                y = max;
+            }
+            
+        }
+        System.out.println("States: " + statescheack);
+        System.out.println("Cutoffs; "+ cutoffs);
+        System.out.println("H - value: " + y);
+        System.out.println("Move: " + bestAction);
+        System.out.println();
+        return bestAction;
     }
     
     private LongBoard result(LongBoard state, int action, int playerID) {
         LongBoard newBoard = new LongBoard(state);
-		newBoard.move(action);
+        newBoard.move(action);
         return newBoard;
     }
 
