@@ -211,27 +211,21 @@ public class GLaDOS implements IGameLogic {
 
     private class MovesToWin implements Heuristic {
 
-        private int row(LongBoard state, int lastMove){
-            //for(int i=0; i<y; i++){
-                //if(state.boards[lastMove] != 0){ // TODO: This is not working
-                //    return i;
-                //}
-            //}
-            return 0;
-            //throw new IllegalArgumentException("Illegal move made it to heuristic");
+        private int row(LongBoard state, int lastMove) {
+            return state.height[lastMove];
         }
 
-        private float hTrace(LongBoard state, int lastMoveX, int lastMoveY){
+        private float hTrace(LongBoard state, int lastMoveX, int lastMoveY) {
             int freeOrOwned = 0;
-            int owned =0;
+            int owned = 0;
             boolean met = false;
              //   System.out.println(lastMoveX);
              //   System.out.println(lastMoveY);
             /*
-            for(int i = 0; i < x; i++){
+            for(int i = 0; i < x; i++) {
                 met = i >= lastMoveX;
                 System.out.println(met);
-                if(state[i][lastMoveY] == 0){
+                if(state[i][lastMoveY] == 0) {
                     System.out.println("free");
                     freeOrOwned++;
                 } else if (state[i][lastMoveY] == playerID){
@@ -246,7 +240,7 @@ public class GLaDOS implements IGameLogic {
                     freeOrOwned = 0;
                     owned = 0;
                 }
-            } */
+            }*/
             // TODO: Fix
             return freeOrOwned - owned;
         }
