@@ -1,10 +1,16 @@
+import java.awt.List;
+import java.io.Console;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.io.FileReader;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -12,287 +18,424 @@ import java.util.List;
  * not recommended to write all the code in a single class e class.'
  */
 public class GLaDOS implements IGameLogic {
-    private HashMap<String, Float> knowledgeBase;
-    private int x = 0, y = 0;
-    private int playerID;
-    private int opponentID;
-    private LongBoard gameBoard;
-    private int statescheack = 0, cutoffs = 0;
-    private boolean hasReachedMaxDepth;
-    //for search in knowledge base
-    private int startDepth = 8;
-    private Heuristic H;
+	private HashMap<String, Float> knowledgeBase;
+	private int x = 0, y = 0, lastMoveColumn = -1;
+	private int playerID;
+	private int opponentID;
+	private LongBoard gameBoard;
+	private int statescheack = 0, cutoffs = 0;
+	private boolean hasReachedMaxDepth;
+	//for search in knowledge base
+	private int startDepth = 2;
+	private Heuristic H;
 
-
-    /**
-     * An tuple class parametrized over a type T. Just because I have an inherent disrespect for my RAM. Thanks Java.
-     */
-    class Tuple<T, U> {
-        final T _1; final U _2;
-        Tuple(T _1, U _2) { this._1 = _1; this._2 = _2; }
-    }
-
-    private ArrayList<Integer> generateActions(LongBoard state) {
-        ArrayList<Integer> result = new ArrayList<Integer>();
-        int middle = x/2;
-        //TODO choose random when x is even
-        if (state.isPlayable(middle)) {
-            result.add(middle);
-        }
-        for (int i=1; i <= x/2; i++){
-            if(middle + i < x) {
-                if (state.isPlayable(middle + i)) {
-                    result.add(middle + i);
-                }
-            }
-            if(middle - i > -1) {
-                if (state.isPlayable(middle - i)) {
-                    result.add(middle - i);
-                }
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Calls the underlying heuristics by inserting a coin and calculating the win-value.
-     */
-    private Tuple<Float, HeuristicData> h(LongBoard board, HeuristicData data, int column, int opponent){
-        return H.h(board, data, column, opponent);
-    }
-
-    private float utility(Winner win){
-        if (win == Winner.TIE) {
-            return 0.0f;
-        } else if (win.ordinal() == playerID -1) {
-            return 1.0f;
-        } else if (win == Winner.NOT_FINISHED) {
-            throw new IllegalArgumentException("Faggot");
-        } else {
-           return -1.0f;
-        }
-    }
-
-    private Tuple<Float, HeuristicData> max(LongBoard state, HeuristicData data, float alpha,
-                                            float beta, int action, int depth) {
-        Winner win = gameFinished(state);
-        statescheack++;
-        Tuple<Float, HeuristicData> y = new Tuple<Float, HeuristicData>((float) Integer.MIN_VALUE, null);
-        if(depth == 0) {
-            hasReachedMaxDepth = true;
-            return h(state, data, action, opponentID);
-        }
-        if(win != Winner.NOT_FINISHED) {
-        	return new Tuple<Float, HeuristicData>(utility(win), null);
-        }
-
-        for (int newaction : generateActions(state)) {
-            Tuple<Float, HeuristicData> min = min(result(state, newaction), data, alpha, beta,newaction, depth - 1);
-            if (min._1 > y._1) {
-                y = min;
-            }
-            // tests for possible beta cut
-            if (y._1 >= beta) {
-                cutoffs++;
-                return y;
-            }
-
-            alpha = Math.max(alpha, y._1);
-
-        }
-        return y;
-    }
-
-    private Tuple<Float, HeuristicData> min(LongBoard state, HeuristicData data, float alpha,
-                                            float beta, int action, int depth) {
-        statescheack++;
-        Tuple<Float, HeuristicData> y = new Tuple<Float, HeuristicData>((float) Integer.MAX_VALUE, data);
-
-        Winner win = gameFinished(state);
-
-        if (depth == 0) {
-            hasReachedMaxDepth = true;
-            return h(state, null, action, playerID);
-        }
-        // If the state is a finished state
-        if (win != Winner.NOT_FINISHED)
-            return new Tuple<Float, HeuristicData>(utility(win), null);
-
-        for (int newaction : generateActions(state)) {
-            Tuple<Float, HeuristicData> max = max(
-                    result(state, newaction), data, alpha, beta, newaction, depth - 1
-            );
-
-            if (max._1 < y._1) {
-                y = max;
-            }
-
-            // tests for possible alpha cut
-            if (y._1 <= alpha) {
-                cutoffs++;
-                return y;
-            }
-            beta = Math.min(beta, y._1);
-        }
-        return y;
-    }
-
-    // knowledge!
-    public int knowledgeSearch() {
-        hasReachedMaxDepth = true;
-        if (startDepth > 0){
-            return minimax(gameBoard, startDepth);
-        }
-        H = new Threats();
-        return minimax(gameBoard, 8);
-    }
-
-    // Iterative
-    public int iterativeSearch() {
-        int i = 0;
-        int move = -1;
-        hasReachedMaxDepth = true;
-        // TODO stop if we find a sure win util = 1;
-        // TODO make stop after x sec. maybe with an exception
-        while (i < Integer.MAX_VALUE && hasReachedMaxDepth) {
-            System.out.println("depth: " + i);
-            move = minimax(gameBoard, ++i);
-        }
-        return move;
-    }
-
-    private int minimax(LongBoard state, int depth) {
-        int bestAction = -1;
-        statescheack = 0;
-        float y = Integer.MIN_VALUE;
- 
-        hasReachedMaxDepth = false;
-        //Generate the valid actions from the start state
-        for (int action : generateActions(state)) {
-            Tuple<Float, HeuristicData> max = min(
-                    result(state,action),
-                    H.createHeuristic(), Integer.MIN_VALUE, Integer.MAX_VALUE, action, depth-1
-            );
-            //If the current action is better than the previous ones, choose this
-            if(max._1 > y) {
-                bestAction = action;
-                y = max._1;
-            }
-
-        }
-        System.out.println("States: " + statescheack);
-        System.out.println("Cutoffs; "+ cutoffs);
-        System.out.println("H - value: " + y);
-        System.out.println("Move: " + bestAction);
-        System.out.println();
-        return bestAction;
-    }
-    
-    private LongBoard result(LongBoard state, int action) {
-        LongBoard newBoard = new LongBoard(state);
-        newBoard.move(action);
-        return newBoard;
-    }
-
-    public void initializeGame(int x, int y, int playerID) {
-        this.x = x;
-        this.y = y;
-        this.playerID = playerID;
-        if(playerID == 1) {
-            opponentID = 2;
-        } else {
-            opponentID = 1;
-        }
-        gameBoard = new LongBoard(x, y);
-        if (x == 7 && y == 6){
-            H = new baseLookUp();
-            System.out.println("INITTIN, BITCH");
-            initKnowledge();
-        } else {
-            H = new baseLookUp();
-        }
-    }
-
-    public Winner gameFinished() {
-        return gameFinished(gameBoard);
-    }
-
-    public static Winner gameFinished(LongBoard board) {
-        return board.hasWon() ?
-                ((board.player & 1) == 0 ? Winner.PLAYER1 : Winner.PLAYER2) :
-                (board.player == board.SIZE ? Winner.TIE : Winner.NOT_FINISHED); }
-    
-    public void insertCoin(int column, int playerID) {
-        gameBoard.move(column);
-        startDepth--;
-    }
-
-    public int decideNextMove() {
-        return knowledgeSearch();
-    }
-
-    /**
-     * A data interface for the heuristics to contain states.
-     */
-    public interface HeuristicData {}
-
-    /**
-     * A heuristic that describes a numeric value between -1 to 1 of a game-state, where 1 is a win and -1 a loss.
-     * @param <T>  The type of the heuristic data (if any).
-     */
-    public interface Heuristic<T extends HeuristicData> {
-        public T createHeuristic();
-        public Tuple<Float, T> h(LongBoard board, T data, int column, int player);
-    }
-
-    private class baseLookUp implements Heuristic {
-        public HeuristicData createHeuristic() { return null; }
-        public Tuple<Float, HeuristicData> h(LongBoard board, HeuristicData data, int moveColumn, int player) {
-            Float ret = knowledgeBase.get(board.toString());
-            if (ret == null){
-                System.out.println("State not in base:");
-                System.out.println(board.toString());
-                ret = -1000f;
-            }
-            return new Tuple<Float, HeuristicData>(ret, null);
-        }
-    }
-
-    private class Threats implements Heuristic {
-
-        public HeuristicData createHeuristic() { return null; }
-
-		public Tuple<Float, HeuristicData> h(LongBoard state, HeuristicData data, int column, int ignoreThis) {
-			int empty = -1;
-			int empty2 = -1;
-			for (int h=0; h <= state.HEIGHT; h++) {
-			      for (int w=h; w < state.SIZE1; w+=state.H1) {
-				long mask = 1l<<w;
-				//AI owns postion
-				if((state.boards[playerID-1] & mask) !=0) {
-					if(h + 3 < state.HEIGHT) {
-						empty=explore(w, 3, 1, playerID-1, state, -1, 0);
-					}
-				}
-				//Opponent owns postion
-				else if((state.boards[opponentID-1] & mask) !=0) {
-					if(h + 3 < state.HEIGHT) {
-						empty2 = explore(w, 3, 1, opponentID-1, state, -1, 0);
-					}
-				} 
-				//No one owns postion
-				else {
-					int player = zeroExplore(w,3,1,-1,state);
-				}
-			}
-			}
-			if(empty != -1 || empty2 != -1) {
-				System.out.println(empty + " "  +empty2);
-			}
-			
-			return new Tuple<Float, HeuristicData>(0f, null);
+	private ArrayList<Integer> generateActions(LongBoard state) {
+		ArrayList<Integer> result = new ArrayList<Integer>();
+		int middle = x/2;
+		//TODO choose random when x is even
+		if (state.isPlayable(middle)) {
+			result.add(middle);
 		}
-    	
+		for (int i=1; i <= x/2; i++){
+			if(middle + i < x) {
+				if (state.isPlayable(middle + i)) {
+					result.add(middle + i);
+				}
+			}
+			if(middle - i > -1) {
+				if (state.isPlayable(middle - i)) {
+					result.add(middle - i);
+				}    
+			}
+		}
+		return result;
+	}
+
+	private float h(LongBoard state, Integer winner){
+		return H.h(state, winner);
+	}
+
+	private float utility(Winner win){
+		if (win == Winner.TIE) {
+			return 0.0f;
+		} else if (win.ordinal() == playerID -1) {
+			return 1.0f;
+		} else if (win == Winner.NOT_FINISHED) {
+			throw new IllegalArgumentException("Faggot");
+		} else {
+			return -1.0f;
+		}
+	}
+
+	private float max(LongBoard state,float alpha, float beta, int action, int depth) {
+		Winner win = gameFinished(state);
+		statescheack++;
+		float y = Integer.MIN_VALUE;
+		if(depth == 0) {
+			hasReachedMaxDepth = true;
+			return h(state, action);
+		}
+		if(win != Winner.NOT_FINISHED) {
+			return utility(win);
+		}
+
+		for (int newaction : generateActions(state)) {
+			y = Math.max(y,min(result(state, newaction, playerID), alpha, beta,newaction, depth - 1));
+			// tests for possible beta cut
+			if (y >= beta) {
+				cutoffs++;
+				return y;
+			}
+			alpha = Math.max(alpha, y);
+
+		}
+		return y;
+	}
+
+	private float min(LongBoard state,float alpha,float beta,int action,
+			int depth) {
+		statescheack++;
+		float y = Integer.MAX_VALUE;
+
+		Winner win = gameFinished(state);
+
+		if (depth == 0) {
+			hasReachedMaxDepth = true;
+			return h(state, action);
+		}
+		// If the state is a finished state
+		if (win != Winner.NOT_FINISHED)
+			return utility(win);
+
+		for (int newaction : generateActions(state)) {
+			y = Math.min(
+					y,
+					max(result(state, newaction, opponentID), alpha, beta,
+							newaction, depth - 1));
+			// tests for possible alpha cut
+			if (y <= alpha) {
+				cutoffs++;
+				return y;
+			}
+			beta = Math.min(beta, y);
+		}
+		return y;
+	}
+
+	// knowledge!
+	public int knowledgeSearch() {
+		hasReachedMaxDepth = true;
+		return minimax(gameBoard, startDepth--);
+	}
+
+	// Iterative
+	public int iterativeSearch() {
+		int i = 0;
+		int move = -1;
+		hasReachedMaxDepth = true;
+		// TODO stop if we find a sure win util = 1;
+		// TODO make stop after x sec. maybe with an exception
+		while (i < 9 && hasReachedMaxDepth) {
+			System.out.println("depth: " + i);
+			move = minimax(gameBoard, ++i);
+		}
+		return move;
+	}
+
+	private int minimax(LongBoard state, int depth) {
+		int bestAction = -1;
+		statescheack = 0;
+		float y = Integer.MIN_VALUE;
+
+		hasReachedMaxDepth = false;
+		//Generate the valid actions from the start state
+		for (int action : generateActions(state)) {
+			float max = min(result(state,action,playerID),Integer.MIN_VALUE,Integer.MAX_VALUE,action,depth-1);
+			//If the current action is better than the previous ones, choose this
+			if(max > y) {
+				bestAction = action;
+				y = max;
+			}
+
+		}
+		System.out.println("States: " + statescheack);
+		System.out.println("Cutoffs; "+ cutoffs);
+		System.out.println("H - value: " + y);
+		System.out.println("Move: " + bestAction);
+		System.out.println();
+		return bestAction;
+	}
+
+	private LongBoard result(LongBoard state, int action, int playerID) {
+		LongBoard newBoard = new LongBoard(state);
+		newBoard.move(action);
+		return newBoard;
+	}
+
+	public void initializeGame(int x, int y, int playerID) {
+		this.x = x;
+		this.y = y;
+		this.playerID = playerID;
+		if(playerID == 1) {
+			opponentID = 2;
+		} else {
+			opponentID = 1;
+		}
+		gameBoard = new LongBoard(x, y);
+		if (x == 7 && y == 6){
+			H = new Threats();
+			initKnowledge();
+		} else {
+			H = new Threats();
+		}
+	}
+
+	public Winner gameFinished() {
+		return gameFinished(gameBoard);
+	}
+
+	public static Winner gameFinished(LongBoard board) {
+		return board.hasWon() ?
+				((board.player & 1) == 0 ? Winner.PLAYER1 : Winner.PLAYER2) :
+					(board.player == board.SIZE ? Winner.TIE : Winner.NOT_FINISHED);
+	}
+
+	public void insertCoin(int column, int playerID) {
+
+		gameBoard.move(column);
+	}
+
+	public int decideNextMove() {
+
+		return iterativeSearch();
+	}
+
+	public interface Heuristic {
+		public float h(LongBoard state, Integer lastMove);
+	}
+
+	private class baseLookUp implements Heuristic {
+		public float h(LongBoard state, Integer ignored_var) {
+			return 0f;
+		}
+	}
+
+	private class Threats implements Heuristic {
+
+		@Override
+		public float h(LongBoard state, Integer lastMove) {
+			int player = -1;
+			Set<Integer> AEVEN = new TreeSet<>();
+			Set<Integer> AODD = new TreeSet<>();
+			Set<Integer> BEVEN = new TreeSet<>();
+			Set<Integer> BODD = new TreeSet<>();
+			ArrayList<Set<Integer>> lists = new ArrayList<Set<Integer>>();
+			lists.add(0, AEVEN);
+			lists.add(1, BEVEN);
+			lists.add(0 + 2, AODD);
+			lists.add(1 + 2, BODD);
+			for (int h=0; h <= state.HEIGHT; h++) {
+				for (int w=h; w < state.SIZE1; w+=state.H1) {
+					player = -1;
+					long mask = 1l<<w;
+					//A owns postion
+					if((state.boards[0] & mask) !=0) {
+						player = 0;
+					}
+					//B owns postion
+					if((state.boards[1] & mask) !=0) {
+						player = 1;
+					} 
+
+					if(player != -1) {
+						//VERT
+						if(h + 3 < state.HEIGHT) {
+							int emptyPos = explore(w, 3, 1, player, state, -1, 0);
+							if(emptyPos != -1) {
+								//System.err.println(w);
+								//System.err.println("Found threat VERT " + player + " at pos " + emptyPos);
+								lists.get(player + (emptyPos%2)*2).add(emptyPos);
+							}
+						}
+						//HORI
+						if((w / state.H1)+ 3 < state.WIDTH) {
+							int emptyPos = explore(w, 3, state.H1, player, state, -1, 0);
+							if(emptyPos != -1) {
+								//System.err.println(w);
+								//System.err.println("Found threat HORI " + player + " at pos " + emptyPos);
+								lists.get(player+ (emptyPos%2)*2).add(emptyPos);
+							}
+						}
+						// '/'
+						if((h + 3 < state.HEIGHT) && ((w / state.H1)+ 3 < state.WIDTH)) {
+							int emptyPos = explore(w, 3, state.H2, player, state, -1, 0);
+							if(emptyPos != -1) {
+								//System.err.println(w);
+								//System.err.println("Found threat / " + player + " at pos " + emptyPos);
+								lists.get(player+ (emptyPos%2)*2).add(emptyPos);
+							}
+			for (int h=0; h <= state.HEIGHT; h++) {
+				for (int w=h; w < state.SIZE1; w+=state.H1) {
+					player = -1;
+					long mask = 1l<<w;
+					//A owns postion
+					if((state.boards[0] & mask) !=0) {
+						player = 0;
+					}
+					//B owns postion
+					if((state.boards[1] & mask) !=0) {
+						player = 1;
+					} 
+
+					if(player != -1) {
+						//VERT
+						if(h + 3 < state.HEIGHT) {
+							int emptyPos = explore(w, 3, 1, player, state, -1, 0);
+							if(emptyPos != -1) {
+								//System.err.println(w);
+								//System.err.println("Found threat VERT " + player + " at pos " + emptyPos);
+								lists.get(player + (emptyPos%2)*2).add(emptyPos);
+							}
+						}
+						//HORI
+						if((w / state.H1)+ 3 < state.WIDTH) {
+							int emptyPos = explore(w, 3, state.H1, player, state, -1, 0);
+							if(emptyPos != -1) {
+								//System.err.println(w);
+								//System.err.println("Found threat HORI " + player + " at pos " + emptyPos);
+								lists.get(player+ (emptyPos%2)*2).add(emptyPos);
+							}
+						}
+						// '/'
+						if((h + 3 < state.HEIGHT) && ((w / state.H1)+ 3 < state.WIDTH)) {
+							int emptyPos = explore(w, 3, state.H2, player, state, -1, 0);
+							if(emptyPos != -1) {
+								//System.err.println(w);
+								//System.err.println("Found threat / " + player + " at pos " + emptyPos);
+								lists.get(player+ (emptyPos%2)*2).add(emptyPos);
+							}
+						}
+						if(h + 3 < state.HEIGHT && ((w / state.H1) - 3 >= 0)) {
+							int emptyPos = explore(w, 3, -state.HEIGHT, player, state, -1, 0);
+							if(emptyPos != -1) {
+								//System.err.println(w);
+								//System.err.println("Found threat \\ " + player + " at pos " + emptyPos);
+								lists.get(player+ (emptyPos%2)*2).add(emptyPos);
+							}
+						}
+					}
+					//No one owns postion
+					else {
+						//VERT
+						if(h + 3 < state.HEIGHT) {
+							int play = zeroExplore(w,3,1,-1,state);
+							if(play != -1) {
+								//System.err.println(w);
+								//System.err.println("Found Threat VERT " + play + " at pos " + w);
+								lists.get(play+ (w%2)*2).add(w);
+							}
+						}
+						//HORI
+						if((w / state.H1)+ 3 < state.WIDTH) {
+							int play = zeroExplore(w,3,state.H1,-1,state);
+							if(play != -1) {
+							//	System.err.println(w);
+								//System.err.println("Found Threat HORI " + play + " at pos " + w);
+								lists.get(play+ (w%2)*2).add(w);
+							}
+						}
+						// '/'
+						if((h + 3 < state.HEIGHT) && ((w / state.H1)+ 3 < state.WIDTH)) {
+							int play = zeroExplore(w,3,state.H2,-1,state);
+							if(play != -1) {
+					//			System.err.println(w);
+						//		System.err.println("Found Threat / " + play + " at pos " + w);
+								lists.get(play+ (w%2)*2).add(w);
+							}
+						}
+						if(h + 3 < state.HEIGHT && ((w / state.H1) - 3 >= 0)) {
+							int play = zeroExplore(w,3,-state.HEIGHT,-1,state);
+							if(play != -1) {
+			//					System.err.println(w);
+				//				System.err.println("Found Threat \\ " + play + " at pos " + w);
+								lists.get(play+ (w%2)*2).add(w);
+							}
+						}
+					}
+				}
+			}
+		/* for (Integer set : lists.get(0)) {
+			System.err.println("A");
+			System.err.println(set);
+		}
+		 for (Integer set : lists.get(1)) {
+
+				System.err.println("B");
+				System.err.println(set);
+			}
+		 for (Integer set : lists.get(2)) {
+			System.err.println("AODD");
+			System.err.println(set);
+		}
+		 for (Integer set : lists.get(3)) {
+
+				System.err.println("BODD");
+				System.err.println(set);
+			}
+		 */
+		 int neg = 0;
+		 if(playerID == 1) {
+			 neg = 1;
+		 } else {
+			 neg = -1;
+		 }
+		 
+		 for (Integer pos : AODD) {
+			int col = pos/state.HEIGHT;
+			if(!ThreatsBelow(col, pos, BEVEN) && !ThreatsInOtherColums(col,BODD)) {
+				//WIN FOR A
+				return 0.9F*neg;
+			}
+		 }
+		 int count = 0;
+		 for (Integer pos : AODD) {
+				int col = pos/state.HEIGHT;
+				if(!ThreatsBelow(col, pos, BEVEN)) {
+					count++;
+				}
+			 }
+		 if(count > BODD.size() && BEVEN.size() == 0) {
+			 return 0.9F * neg;
+		 }
+		 
+		 if(BEVEN.size() > 0) {
+			 return -0.9F *neg;
+		 }
+				
+			return 0;
+		}
+		
+	
+	public boolean ThreatsBelow(int col,int pos,Set<Integer> haystack) {
+		for (Integer pos2 : haystack) {
+			if(pos2/gameBoard.HEIGHT == col) {
+				if(pos2 < pos) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	
+	public boolean ThreatsInOtherColums(int col,Set<Integer> haystack) {
+		for (Integer pos2 : haystack) {
+			if(pos2/gameBoard.HEIGHT != col) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 		//Returns placement of the threat
 		private int explore(int startPostion, int depth, int dicrection, int lastFoundPlayer, LongBoard state,int threatPlacement, int emptyPostions) {
 			if(depth == 0) {
@@ -300,7 +443,7 @@ public class GLaDOS implements IGameLogic {
 			}
 			long mask = 1l <<(startPostion + dicrection);
 			if((state.boards[lastFoundPlayer] & mask) != 0) {
-				return explore(startPostion + dicrection, depth-1, dicrection, lastFoundPlayer, state,-1,0);
+				return explore(startPostion + dicrection, depth-1, dicrection, lastFoundPlayer, state,-1,emptyPostions);
 			} else if ((state.boards[Math.abs(lastFoundPlayer-1)] & mask) != 0) {
 				return -1;
 			} else {
@@ -311,14 +454,14 @@ public class GLaDOS implements IGameLogic {
 				}
 			}
 		}
-		
+
 		//Returns the index of the player who owns the threat
 		private int zeroExplore(int startPostion, int depth, int dicrection, int lastFoundPlayer, LongBoard state) {
 			if(depth == 0) {
 				return lastFoundPlayer;
 			}
 			long mask = 1l <<(startPostion + dicrection);
-			
+
 			if((state.boards[0] & mask) != 0) {
 				if(lastFoundPlayer == 0 || lastFoundPlayer == -1) {
 					return zeroExplore(startPostion + dicrection, depth-1, dicrection, 0, state);
@@ -333,7 +476,7 @@ public class GLaDOS implements IGameLogic {
 				return -1;
 			}
 		}
-    }
+	}
 
     /**
      * A heuristic that considers moves to win.
@@ -346,13 +489,13 @@ public class GLaDOS implements IGameLogic {
             return null;
         }
 
-        private float hTrace(LongBoard state, int lastMoveX, int lastMoveY) {
-            int freeOrOwned = 0;
-            int owned = 0;
-            boolean met = false;
-             //   System.out.println(lastMoveX);
-             //   System.out.println(lastMoveY);
-            /*
+		private float hTrace(LongBoard state, int lastMoveX, int lastMoveY) {
+			int freeOrOwned = 0;
+			int owned = 0;
+			boolean met = false;
+			//   System.out.println(lastMoveX);
+			//   System.out.println(lastMoveY);
+			/*
             for(int i = 0; i < x; i++) {
                 met = i >= lastMoveX;
                 System.out.println(met);
