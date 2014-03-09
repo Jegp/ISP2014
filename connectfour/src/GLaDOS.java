@@ -191,7 +191,7 @@ public class GLaDOS implements IGameLogic {
 
     public static Winner gameFinished(LongBoard board) {
         return board.hasWon() ?
-                (board.player == 0 ? Winner.PLAYER1 : Winner.PLAYER2) :
+                ((board.player & 1) == 0 ? Winner.PLAYER1 : Winner.PLAYER2) :
                 (board.player == board.SIZE - 1 ? Winner.TIE : Winner.NOT_FINISHED);
     }
     
