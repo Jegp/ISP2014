@@ -6,6 +6,8 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import javax.swing.plaf.OptionPaneUI;
+
 /**
  * The cake is a lie. Awesome quote from exercise description: 'Finally, it is
  * not recommended to write all the code in a single class e class.'
@@ -19,24 +21,24 @@ public class GLaDOS implements IGameLogic {
     private int statescheack = 0, cutoffs = 0;
     private boolean hasReachedMaxDepth;
     //for search in knowledge base
-    private int startDepth = 8;
+    private int startDepth = 13;
     private Heuristic H;
 
     private ArrayList<Integer> generateActions(LongBoard state) {
     ArrayList<Integer> result = new ArrayList<Integer>();
     int middle = x/2;
   //TODO choose random when x is even
-    if (state.height[middle] == (byte) (state.H1 * middle)) {
+    if (state.isPlayable(middle)) {
         result.add(middle);
     }
     for (int i=1; i <= x/2; i++){
         if(middle + i < x) {
-            if (state.height[middle + i] == (byte) (state.H1 * (middle + i))) {
+            if (state.isPlayable(middle + i)) {
                 result.add(middle + i);
             }
         }
         if(middle - i > -1) {
-            if (state.height[middle - i] == (byte) (state.H1 * (middle - i))) {
+            if (state.isPlayable(middle - i)) {
                 result.add(middle - i);
             }    
         }
@@ -68,7 +70,9 @@ public class GLaDOS implements IGameLogic {
             hasReachedMaxDepth = true;
             return h(state, action);
         }
-        if(win != Winner.NOT_FINISHED) return utility(win);
+        if(win != Winner.NOT_FINISHED) {
+        	return utility(win);
+        }
 
         for (int newaction : generateActions(state)) {
             y = Math.max(y,min(result(state, newaction, playerID), alpha, beta,newaction, depth - 1));
@@ -177,7 +181,7 @@ public class GLaDOS implements IGameLogic {
             H = new baseLookUp();
             initKnowledge();
         } else {
-            H = new MovesToWin();
+            H = new baseLookUp();
         }
     }
 
@@ -192,7 +196,9 @@ public class GLaDOS implements IGameLogic {
     }
     
     public void insertCoin(int column, int playerID) {
+    	Threats t = new Threats();
         gameBoard.move(column);
+    	t.h(gameBoard, 1);
     }
 
     public int decideNextMove() {
@@ -205,8 +211,84 @@ public class GLaDOS implements IGameLogic {
 
     private class baseLookUp implements Heuristic {
         public float h(LongBoard state, Integer ignored_var) {
-            return 1f;
+            return 0f;
         }
+    }
+    
+    private class Threats implements Heuristic {
+
+		@Override
+		public float h(LongBoard state, Integer lastMove) {
+			int empty = -1;
+			int empty2 = -1;
+			for (int h=0; h <= state.HEIGHT; h++) {
+			      for (int w=h; w < state.SIZE1; w+=state.H1) {
+				long mask = 1l<<w;
+				//AI owns postion
+				if((state.boards[playerID-1] & mask) !=0) {
+					if(h + 3 < state.HEIGHT) {
+						empty=explore(w, 3, 1, playerID-1, state, -1, 0);
+					}
+				}
+				//Opponent owns postion
+				else if((state.boards[opponentID-1] & mask) !=0) {
+					if(h + 3 < state.HEIGHT) {
+						empty2 = explore(w, 3, 1, opponentID-1, state, -1, 0);
+					}
+				} 
+				//No one owns postion
+				else {
+					int player = zeroExplore(w,3,1,-1,state);
+				}
+			}
+			}
+			if(empty != -1 || empty2 != -1) {
+				System.out.println(empty + " "  +empty2);
+			}
+			
+			return 0;
+		}
+    	
+		//Returns placement of the threat
+		private int explore(int startPostion, int depth, int dicrection, int lastFoundPlayer, LongBoard state,int threatPlacement, int emptyPostions) {
+			if(depth == 0) {
+				return threatPlacement;
+			}
+			long mask = 1l <<(startPostion + dicrection);
+			if((state.boards[lastFoundPlayer] & mask) != 0) {
+				return explore(startPostion + dicrection, depth-1, dicrection, lastFoundPlayer, state,-1,0);
+			} else if ((state.boards[Math.abs(lastFoundPlayer-1)] & mask) != 0) {
+				return -1;
+			} else {
+				if(emptyPostions == 0) {
+					return explore(startPostion + dicrection, depth-1, dicrection, lastFoundPlayer, state,startPostion+dicrection,1);
+				} else {
+					return -1;
+				}
+			}
+		}
+		
+		//Returns the index of the player who owns the threat
+		private int zeroExplore(int startPostion, int depth, int dicrection, int lastFoundPlayer, LongBoard state) {
+			if(depth == 0) {
+				return lastFoundPlayer;
+			}
+			long mask = 1l <<(startPostion + dicrection);
+			
+			if((state.boards[0] & mask) != 0) {
+				if(lastFoundPlayer == 0 || lastFoundPlayer == -1) {
+					return zeroExplore(startPostion + dicrection, depth-1, dicrection, 0, state);
+				}
+				return -1;
+			} else if ((state.boards[1] & mask) != 0) {
+				if(lastFoundPlayer == 1 || lastFoundPlayer == -1) {
+					return zeroExplore(startPostion + dicrection, depth-1, dicrection, 1, state);
+				}
+				return -1;
+			} else {
+				return -1;
+			}
+		}
     }
 
     private class MovesToWin implements Heuristic {
@@ -317,7 +399,7 @@ public class GLaDOS implements IGameLogic {
         }
 
         void move(int column) {
-            boards[player & 1] ^= 1L << height[column];
+            boards[player & 1] ^= 1L << height[column]++;
             player++;
         }
 
