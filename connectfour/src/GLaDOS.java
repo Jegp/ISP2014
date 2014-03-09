@@ -1,6 +1,5 @@
 import java.io.Console;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.io.FileReader;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -14,7 +13,7 @@ import javax.swing.plaf.OptionPaneUI;
  */
 public class GLaDOS implements IGameLogic {
     private HashMap<String, Float> knowledgeBase;
-    private int x = 0, y = 0, lastMoveColumn = -1;
+    private int x = 0, y = 0;
     private int playerID;
     private int opponentID;
     private LongBoard gameBoard;
@@ -25,29 +24,29 @@ public class GLaDOS implements IGameLogic {
     private Heuristic H;
 
     private ArrayList<Integer> generateActions(LongBoard state) {
-    ArrayList<Integer> result = new ArrayList<Integer>();
-    int middle = x/2;
-  //TODO choose random when x is even
-    if (state.isPlayable(middle)) {
-        result.add(middle);
-    }
-    for (int i=1; i <= x/2; i++){
-        if(middle + i < x) {
-            if (state.isPlayable(middle + i)) {
-                result.add(middle + i);
+        ArrayList<Integer> result = new ArrayList<Integer>();
+        int middle = x/2;
+        //TODO choose random when x is even
+        if (state.isPlayable(middle)) {
+            result.add(middle);
+        }
+        for (int i=1; i <= x/2; i++){
+            if(middle + i < x) {
+                if (state.isPlayable(middle + i)) {
+                    result.add(middle + i);
+                }
+            }
+            if(middle - i > -1) {
+                if (state.isPlayable(middle - i)) {
+                    result.add(middle - i);
+                }
             }
         }
-        if(middle - i > -1) {
-            if (state.isPlayable(middle - i)) {
-                result.add(middle - i);
-            }    
-        }
-    }
-    return result;
+        return result;
     }
 
     private float h(LongBoard state, Integer winner){
-        return H.h(state, winner);
+        return H.h(state, null);
     }
 
     private float utility(Winner win){
@@ -198,19 +197,28 @@ public class GLaDOS implements IGameLogic {
     public void insertCoin(int column, int playerID) {
     	Threats t = new Threats();
         gameBoard.move(column);
-    	t.h(gameBoard, 1);
+    	t.h(gameBoard, null);
     }
 
     public int decideNextMove() {
         return knowledgeSearch();
     }
 
-    public interface Heuristic {
-        public float h(LongBoard state, Integer lastMove);
+    /**
+     * A data interface for the heuristics to contain states.
+     */
+    public interface HeuristicData {}
+
+    /**
+     * A heuristic that describes a numeric value between -1 to 1 of a game-state, where 1 is a win and -1 a loss.
+     * @param <T>  The type of the heuristic data (if any).
+     */
+    public interface Heuristic<T extends HeuristicData> {
+        public float h(LongBoard state, T data);
     }
 
     private class baseLookUp implements Heuristic {
-        public float h(LongBoard state, Integer ignored_var) {
+        public float h(LongBoard state, HeuristicData data) {
             return 0f;
         }
     }
@@ -218,7 +226,7 @@ public class GLaDOS implements IGameLogic {
     private class Threats implements Heuristic {
 
 		@Override
-		public float h(LongBoard state, Integer lastMove) {
+		public float h(LongBoard state, HeuristicData ignoreThisVariable) {
 			int empty = -1;
 			int empty2 = -1;
 			for (int h=0; h <= state.HEIGHT; h++) {
@@ -291,7 +299,30 @@ public class GLaDOS implements IGameLogic {
 		}
     }
 
-    private class MovesToWin implements Heuristic {
+    /**
+     * A heuristic that considers moves to win.
+     */
+    private class MovesToWin implements Heuristic<MovesToWin.MTWData> {
+
+        /**
+         * An int tuple class. Just because I have an inherent disrespect for my RAM. Thanks Java.
+         */
+        class Tuple {
+            int x, y;
+            Tuple(int x, int y) { this.x = x; this.y = y; }
+        }
+
+        /**
+         * Data for the MTW heuristic containing the board (with the moves) and a list of the possible wins.
+         */
+        class MTWData implements HeuristicData {
+            int board[][] = new int[x][y];
+            List<List<Tuple>> mtw = Collections.emptyList();
+            MTWData(int board[][], List<List<Tuple>> mtw) {
+                this.board = board;
+                this.mtw   = mtw;
+            }
+        }
 
         private int row(LongBoard state, int lastMove) {
             return state.height[lastMove];
@@ -327,7 +358,7 @@ public class GLaDOS implements IGameLogic {
             return freeOrOwned - owned;
         }
 
-        public float h(LongBoard state, Integer lastMove){
+        public float h(LongBoard state, MTWData data){
             for (int i=0; i<y; i++){
                 System.out.println();
                 for(int j=0; j<x; j++){
@@ -335,7 +366,6 @@ public class GLaDOS implements IGameLogic {
                 }
             }
             System.out.println();
-            System.out.println(hTrace(state, lastMove, row(state, lastMoveColumn)));
             //System.console().readLine();
             return 2f;
         }
@@ -345,12 +375,22 @@ public class GLaDOS implements IGameLogic {
      * A board that is based on a representation of a single long per player.
      */
     public class LongBoard {
-        long boards[];
-        byte height[];
+        // -- The following comments are made for Sigurt, who cannot see the errors in his ways -- //
+        long boards[]; // Two board for player one (0) and player two (1).
+        byte height[]; // The largest index of the columns where a coin has been inserted.
         int player = -1; // Set player to -1 to avoid the hasWon method to check for the wrong player
                          // (because player is incremented whenever a move has been made)
-        int HEIGHT, WIDTH, H1, H2, SIZE, SIZE1, COLUMN;
-        long ALL, BOTTOM, TOP;
+        int HEIGHT,  // The height of the board
+            WIDTH,   // The width of the board
+            H1,      // The height of the board PLUS 1 (hence the 1)
+            H2,      // The height of the board PLUS 2 (hence the 2)
+            SIZE,    // The size of the board (height * width)
+            SIZE1,   // The size of the board PLUS 1 (height * width) + 1 (hence the 1)
+            COLUMN;  // All bytes filled in one single column, found by shifting 1 H1 bytes to the left (to the left).
+
+        long ALL,    // All bytes in the board ignited.
+             BOTTOM, // A long with all the bytes in the bottom row ignited.
+             TOP;    // A long with all the bytes in the top row ignited.
 
         public LongBoard(int width, int height) {
             init(width, height);
