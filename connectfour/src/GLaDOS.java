@@ -11,7 +11,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 
 /**
  * The cake is a lie. Awesome quote from exercise description: 'Finally, it is
@@ -274,57 +273,9 @@ public class GLaDOS implements IGameLogic {
 								//System.err.println("Found threat / " + player + " at pos " + emptyPos);
 								lists.get(player+ (emptyPos%2)*2).add(emptyPos);
 							}
-			for (int h=0; h <= state.HEIGHT; h++) {
-				for (int w=h; w < state.SIZE1; w+=state.H1) {
-					player = -1;
-					long mask = 1l<<w;
-					//A owns postion
-					if((state.boards[0] & mask) !=0) {
-						player = 0;
-					}
-					//B owns postion
-					if((state.boards[1] & mask) !=0) {
-						player = 1;
-					} 
-
-					if(player != -1) {
-						//VERT
-						if(h + 3 < state.HEIGHT) {
-							int emptyPos = explore(w, 3, 1, player, state, -1, 0);
-							if(emptyPos != -1) {
-								//System.err.println(w);
-								//System.err.println("Found threat VERT " + player + " at pos " + emptyPos);
-								lists.get(player + (emptyPos%2)*2).add(emptyPos);
-							}
-						}
-						//HORI
-						if((w / state.H1)+ 3 < state.WIDTH) {
-							int emptyPos = explore(w, 3, state.H1, player, state, -1, 0);
-							if(emptyPos != -1) {
-								//System.err.println(w);
-								//System.err.println("Found threat HORI " + player + " at pos " + emptyPos);
-								lists.get(player+ (emptyPos%2)*2).add(emptyPos);
-							}
-						}
-						// '/'
-						if((h + 3 < state.HEIGHT) && ((w / state.H1)+ 3 < state.WIDTH)) {
-							int emptyPos = explore(w, 3, state.H2, player, state, -1, 0);
-							if(emptyPos != -1) {
-								//System.err.println(w);
-								//System.err.println("Found threat / " + player + " at pos " + emptyPos);
-								lists.get(player+ (emptyPos%2)*2).add(emptyPos);
-							}
-						}
-						if(h + 3 < state.HEIGHT && ((w / state.H1) - 3 >= 0)) {
-							int emptyPos = explore(w, 3, -state.HEIGHT, player, state, -1, 0);
-							if(emptyPos != -1) {
-								//System.err.println(w);
-								//System.err.println("Found threat \\ " + player + " at pos " + emptyPos);
-								lists.get(player+ (emptyPos%2)*2).add(emptyPos);
-							}
 						}
 					}
-					//No one owns postion
+								//No one owns postion
 					else {
 						//VERT
 						if(h + 3 < state.HEIGHT) {
