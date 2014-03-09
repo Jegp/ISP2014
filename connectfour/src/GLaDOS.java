@@ -192,7 +192,7 @@ public class GLaDOS implements IGameLogic {
     public static Winner gameFinished(LongBoard board) {
         return board.hasWon() ?
                 ((board.player & 1) == 0 ? Winner.PLAYER1 : Winner.PLAYER2) :
-                (board.player == board.SIZE - 1 ? Winner.TIE : Winner.NOT_FINISHED);
+                (board.player == board.SIZE ? Winner.TIE : Winner.NOT_FINISHED);
     }
     
     public void insertCoin(int column, int playerID) {
@@ -347,7 +347,8 @@ public class GLaDOS implements IGameLogic {
     public class LongBoard {
         long boards[];
         byte height[];
-        int player;
+        int player = -1; // Set player to -1 to avoid the hasWon method to check for the wrong player
+                         // (because player is incremented whenever a move has been made)
         int HEIGHT, WIDTH, H1, H2, SIZE, SIZE1, COLUMN;
         long ALL, BOTTOM, TOP;
 
@@ -383,7 +384,7 @@ public class GLaDOS implements IGameLogic {
         }
 
         boolean hasWon() {
-            long board = boards[player & 1];
+            long board = boards[player & 1]; // Awesome page at https://codebrew.io/
             long diagonalLeft  = board & (board >> HEIGHT);
             long horizontal    = board & (board >> H1);
             long diagonalRight = board & (board >> H2);
@@ -399,8 +400,8 @@ public class GLaDOS implements IGameLogic {
         }
 
         void move(int column) {
-            boards[player & 1] ^= 1L << height[column]++;
             player++;
+            boards[player & 1] ^= 1L << height[column]++;
         }
 
     }
