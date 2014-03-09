@@ -45,8 +45,11 @@ public class GLaDOS implements IGameLogic {
         return result;
     }
 
-
-    private float h(LongBoard state, Integer winner){
+    /**
+     * Calls the underlying heuristics by inserting a coin and calculating the win-value.
+     */
+    private float h(LongBoard state, Integer column){
+        H.addMove(column);
         return H.h(state, null);
     }
 
@@ -215,16 +218,20 @@ public class GLaDOS implements IGameLogic {
      * @param <T>  The type of the heuristic data (if any).
      */
     public interface Heuristic<T extends HeuristicData> {
+        public void addMove(int column);
         public float h(LongBoard state, T data);
     }
 
     private class baseLookUp implements Heuristic {
+        public void addMove(int moveColumn) {}
         public float h(LongBoard state, HeuristicData data) {
             return 0f;
         }
     }
     
     private class Threats implements Heuristic {
+
+        public void addMove(int column) {}
 
 		@Override
 		public float h(LongBoard state, HeuristicData ignoreThisVariable) {
@@ -305,28 +312,14 @@ public class GLaDOS implements IGameLogic {
      */
     private class MovesToWin implements Heuristic<MovesToWin.MTWData> {
 
-        /**
-         * An int tuple class. Just because I have an inherent disrespect for my RAM. Thanks Java.
-         */
-        class Tuple {
-            final int x, y;
-            Tuple(int x, int y) { this.x = x; this.y = y; }
+        MTWData boardData = new MTWData();
+
+        public void addMove(int column) {
+
         }
 
-        /**
-         * Data for the MTW heuristic containing the board (with the moves) and a list of the possible wins.
-         */
-        class MTWData implements HeuristicData {
-            int board[][] = new int[x][y];
-            List<List<Tuple>> mtw = Collections.emptyList();
-            MTWData(int board[][], List<List<Tuple>> mtw) {
-                this.board = board;
-                this.mtw   = mtw;
-            }
-        }
-
-        private int row(LongBoard state, int lastMove) {
-            return state.height[lastMove];
+        private List<List<Tuple>> htrace(LongBoard state, int lastMove) {
+            return null;
         }
 
         private float hTrace(LongBoard state, int lastMoveX, int lastMoveY) {
@@ -369,6 +362,45 @@ public class GLaDOS implements IGameLogic {
             System.out.println();
             //System.console().readLine();
             return 2f;
+        }
+
+        /**
+         * An int tuple class. Just because I have an inherent disrespect for my RAM. Thanks Java.
+         */
+        class Tuple {
+            final int x, y;
+            Tuple(int x, int y) { this.x = x; this.y = y; }
+        }
+
+        /**
+         * Data for the MTW heuristic containing the board (with the moves) and a list of the possible wins.
+         */
+        class MTWData implements HeuristicData {
+            // The board for the current state
+            int board[][] = new int[x][y];
+            // Moves to win combinations for player 1 (mTWCFP1)
+            List<List<Tuple>> mTWCFP1 = Collections.emptyList();
+            // Moves to win combinations for player 2 (mTWCFP2)
+            List<List<Tuple>> mTWCFP2 = Collections.emptyList();
+
+            /**
+             * Creates a MTWData board with no initial coins set.
+             */
+            MTWData() {}
+
+            /**
+             * Constructs a MTWData object with informations on the coin positions and possible win combinations
+             * for both players.
+             * @param board  A two dimensional array of coins. A value of 0 means no coins, 1 for player 1 and 2 for
+             *               player 2.
+             * @param mTWCFP1  The moves-to-win combinations for player 1
+             * @param mTWCFP2  The moves-to-win combinations for player 2
+             */
+            MTWData(int board[][], List<List<Tuple>> mTWCFP1, List<List<Tuple>> mTWCFP2) {
+                this.board = board;
+                this.mTWCFP1 = mTWCFP1;
+                this.mTWCFP2 = mTWCFP2;
+            }
         }
     }
 
