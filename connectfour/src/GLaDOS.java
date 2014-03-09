@@ -404,6 +404,18 @@ public class GLaDOS implements IGameLogic {
             boards[player & 1] ^= 1L << height[column]++;
         }
 
+        private int getBit(long l, int n){
+            return (l >> n) & 1;
+        }
+
+        public String toString(){
+            StringBuffer sBuff = new StringBuffer();
+            for (int i=0, i < SIZE1; i++){
+                int oppBoard = getBit(boards[opponentID -1]);
+                int playBoard = getBit(boards[playerID -1]);
+            }
+            return "fag";
+        }
     }
 
     //initialize knowledge base from file
