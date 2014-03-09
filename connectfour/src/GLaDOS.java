@@ -375,11 +375,11 @@ public class GLaDOS implements IGameLogic {
      * A board that is based on a representation of a single long per player.
      */
     public class LongBoard {
-        long boards[];
-        byte height[];
+        // -- The following comments are made for Sigurt, who cannot see the errors in his ways -- //
+        long boards[]; // Two board for player one (0) and player two (1).
+        byte height[]; // The largest index of the columns where a coin has been inserted.
         int player = -1; // Set player to -1 to avoid the hasWon method to check for the wrong player
                          // (because player is incremented whenever a move has been made)
-        // -- The following comments are made for Sigurt, who cannot see the errors in his ways -- //
         int HEIGHT,  // The height of the board
             WIDTH,   // The width of the board
             H1,      // The height of the board PLUS 1 (hence the 1)
