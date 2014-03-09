@@ -58,7 +58,8 @@ public class GLaDOS implements IGameLogic {
      * Calls the underlying heuristics by inserting a coin and calculating the win-value.
      */
     private Tuple<Float, HeuristicData> h(LongBoard board, HeuristicData data, int column, int opponent){
-        return H.h(board, data, column, opponent);
+        HeuristicData newData = H.moveHeuristic(data, column, opponent);
+        return H.h(board, newData);
     }
 
     private float utility(Winner win){
@@ -112,7 +113,7 @@ public class GLaDOS implements IGameLogic {
 
         if (depth == 0) {
             hasReachedMaxDepth = true;
-            return h(state, null, action, playerID);
+            return h(state, data, action, playerID);
         }
         // If the state is a finished state
         if (win != Winner.NOT_FINISHED)
@@ -204,7 +205,7 @@ public class GLaDOS implements IGameLogic {
             H = new baseLookUp();
             initKnowledge();
         } else {
-            H = new baseLookUp();
+            H = new MovesToWin();
         }
     }
 
@@ -219,9 +220,7 @@ public class GLaDOS implements IGameLogic {
     }
     
     public void insertCoin(int column, int playerID) {
-    	Threats t = new Threats();
         gameBoard.move(column);
-    	t.h(gameBoard, null, column, playerID);
     }
 
     public int decideNextMove() {
@@ -239,12 +238,14 @@ public class GLaDOS implements IGameLogic {
      */
     public interface Heuristic<T extends HeuristicData> {
         public T createHeuristic();
-        public Tuple<Float, T> h(LongBoard board, T data, int column, int player);
+        public T moveHeuristic(T data, int column, int player);
+        public Tuple<Float, T> h(LongBoard board, T data);
     }
 
     private class baseLookUp implements Heuristic {
         public HeuristicData createHeuristic() { return null; }
-        public Tuple<Float, HeuristicData> h(LongBoard board, HeuristicData data, int moveColumn, int player) {
+        public HeuristicData moveHeuristic(HeuristicData data, int column, int p) { return null; }
+        public Tuple<Float, HeuristicData> h(LongBoard board, HeuristicData data) {
             return new Tuple<Float, HeuristicData>(0f, null);
         }
     }
@@ -252,8 +253,9 @@ public class GLaDOS implements IGameLogic {
     private class Threats implements Heuristic {
 
         public HeuristicData createHeuristic() { return null; }
+        public HeuristicData moveHeuristic(HeuristicData data, int column, int p) { return null; }
 
-		public Tuple<Float, HeuristicData> h(LongBoard state, HeuristicData data, int column, int ignoreThis) {
+		public Tuple<Float, HeuristicData> h(LongBoard state, HeuristicData data) {
 			int empty = -1;
 			int empty2 = -1;
 			for (int h=0; h <= state.HEIGHT; h++) {
@@ -332,50 +334,60 @@ public class GLaDOS implements IGameLogic {
     private class MovesToWin implements Heuristic<MovesToWin.MTWData> {
 
         public MTWData createHeuristic() { return new MTWData(); }
-
-        private List<List<Tuple<Float, MTWData>>> htrace(LongBoard state, int lastMove) {
-            return null;
+        public MTWData moveHeuristic(MTWData oldData, int column, int player) {
+            // First duplicate and update the board
+            MTWData newData = new MTWData(oldData);
+            newData.move(column, player);
+            return newData;
         }
 
-        private float hTrace(LongBoard state, int lastMoveX, int lastMoveY) {
-            int freeOrOwned = 0;
-            int owned = 0;
-            boolean met = false;
-             //   System.out.println(lastMoveX);
-             //   System.out.println(lastMoveY);
-            /*
-            for(int i = 0; i < x; i++) {
-                met = i >= lastMoveX;
-                System.out.println(met);
-                if(state[i][lastMoveY] == 0) {
-                    System.out.println("free");
-                    freeOrOwned++;
-                } else if (state[i][lastMoveY] == playerID){
-                    System.out.println("owned");
-                    freeOrOwned++;
-                    owned++;
+        private void traceDirection(Tuple<List<Tuple<Integer, Integer>>, List<Tuple<Integer, Integer>>> list, int board[][],
+                                    int startX, int startY, int dx, int dy) {
+            // Return if we are outside the board
+            if ((startX == x || startX < 0) || (startY == y || startY < 0)) return;
+
+            // Find the value at the board and store its coordinates if it belongs to a player
+            int value = board[startX][startY];
+            if (value != 0) {
+                Tuple<Integer, Integer> next = new Tuple<Integer, Integer>(startX, startY);
+                if (value == playerID) {
+                    list._1.add(next);
                 } else {
-                    System.out.println("oponent");
-                    if (met){
-                        return freeOrOwned - owned;
-                    }
-                    freeOrOwned = 0;
-                    owned = 0;
+                    list._2.add(next);
                 }
-            }*/
-            // TODO: Fix
-            return freeOrOwned - owned;
+                traceDirection(list, board, startX + dx, startY + dy, dx, dy);
+            }
         }
 
-        public Tuple<Float, MTWData> h(LongBoard board, MTWData data, int column, int player) {
-            int row;
-            for (row = 0; row < y; row++) {
-                if (data.board[column][row] == 0) {
-                    data.board[column][row] = player;
-                    break;
-                }
+        private void updateMTWCs(MTWData data) {
+            // Find horizontal MTW
+            Tuple<List<Tuple<Integer, Integer>>, List<Tuple<Integer, Integer>>> list =
+                    new Tuple<List<Tuple<Integer, Integer>>, List<Tuple<Integer, Integer>>>
+                            (new ArrayList<Tuple<Integer, Integer>>(),
+                                    new ArrayList<Tuple<Integer, Integer>>());
+            traceDirection(list, data.board, data.column, data.row, 0, 1);
+            traceDirection(list, data.board, data.column - 1, data.row, -0, 1);
+
+            if (!(list._1.isEmpty() && list._2.isEmpty())) {
+                System.out.println("Found: " + list._1.size() + " " + list._2.size());
             }
-            return new Tuple<Float, MTWData>(0f, new MTWData(data));
+        }
+
+        private int getMTW(List<List<Tuple<Integer, Integer>>> mTWCs) {
+            return 0;
+        }
+
+        public Tuple<Float, MTWData> h(LongBoard board, MTWData data) {
+            // Find the new MTWCs for both players
+            updateMTWCs(data);
+
+            // Find the least MTW
+            int mTWP1 = getMTW(data.mTWCFP1);
+            int mTWP2 = getMTW(data.mTWCFP1);
+
+            // Calculate and return heuristic value (between -1 and 1)
+            float h = mTWP2 - mTWP1;
+            return new Tuple<Float, MTWData>(h, data);
         }
 
         /**
@@ -389,6 +401,8 @@ public class GLaDOS implements IGameLogic {
             // Moves to win combinations for player 2 (mTWCFP2)
             List<List<Tuple<Integer, Integer>>> mTWCFP2 = Collections.emptyList();
 
+            int column, row, player;
+
             /**
              * Creates a MTWData board with no initial coins set.
              */
@@ -398,12 +412,22 @@ public class GLaDOS implements IGameLogic {
              * Constructs a copy of a MTWData object.
              */
             MTWData(MTWData old) {
-                this.board = new int[x][y];
-                for (int i = 0; i < y; i++) {
-                     System.arraycopy(old.board[i], 0, board[i], 0, y);
+                for (int i = 0; i < x; i++) {
+                    System.arraycopy(old.board[i], 0, board[i], 0, y);
                 }
                 Collections.copy(old.mTWCFP1, this.mTWCFP1);
                 Collections.copy(old.mTWCFP1, this.mTWCFP2);
+            }
+
+            public void move(int column, int player) {
+                this.column = column;
+                this.player = player;
+                for (row = 0; row < y; row++) {
+                    if (board[column][row] == 0) {
+                        board[column][row] = player;
+                        break;
+                    }
+                }
             }
         }
     }
