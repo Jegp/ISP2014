@@ -45,6 +45,7 @@ public class GLaDOS implements IGameLogic {
         return result;
     }
 
+
     private float h(LongBoard state, Integer winner){
         return H.h(state, null);
     }
@@ -308,7 +309,7 @@ public class GLaDOS implements IGameLogic {
          * An int tuple class. Just because I have an inherent disrespect for my RAM. Thanks Java.
          */
         class Tuple {
-            int x, y;
+            final int x, y;
             Tuple(int x, int y) { this.x = x; this.y = y; }
         }
 
@@ -376,7 +377,7 @@ public class GLaDOS implements IGameLogic {
      */
     public class LongBoard {
         // -- The following comments are made for Sigurt, who cannot see the errors in his ways -- //
-        long boards[]; // Two board for player one (0) and player two (1).
+        long boards[]; // Zero-indexed boards for player one (0) and player two (1).
         byte height[]; // The largest index of the columns where a coin has been inserted.
         int player = -1; // Set player to -1 to avoid the hasWon method to check for the wrong player
                          // (because player is incremented whenever a move has been made)
