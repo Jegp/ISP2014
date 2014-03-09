@@ -1,11 +1,11 @@
-import java.io.Console;
-import java.util.*;
-import java.io.FileReader;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
-
-import javax.swing.plaf.OptionPaneUI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * The cake is a lie. Awesome quote from exercise description: 'Finally, it is
@@ -22,6 +22,15 @@ public class GLaDOS implements IGameLogic {
     //for search in knowledge base
     private int startDepth = 13;
     private Heuristic H;
+
+
+    /**
+     * An tuple class parametrized over a type T. Just because I have an inherent disrespect for my RAM. Thanks Java.
+     */
+    class Tuple<T, U> {
+        final T _1; final U _2;
+        Tuple(T _1, U _2) { this._1 = _1; this._2 = _2; }
+    }
 
     private ArrayList<Integer> generateActions(LongBoard state) {
         ArrayList<Integer> result = new ArrayList<Integer>();
@@ -48,9 +57,8 @@ public class GLaDOS implements IGameLogic {
     /**
      * Calls the underlying heuristics by inserting a coin and calculating the win-value.
      */
-    private float h(LongBoard state, Integer column){
-        H.addMove(column);
-        return H.h(state, null);
+    private Tuple<Float, HeuristicData> h(LongBoard board, HeuristicData data, int column, int opponent){
+        return H.h(board, data, column, opponent);
     }
 
     private float utility(Winner win){
@@ -65,57 +73,66 @@ public class GLaDOS implements IGameLogic {
         }
     }
 
-    private float max(LongBoard state,float alpha, float beta, int action, int depth) {
+    private Tuple<Float, HeuristicData> max(LongBoard state, HeuristicData data, float alpha,
+                                            float beta, int action, int depth) {
         Winner win = gameFinished(state);
         statescheack++;
-        float y = Integer.MIN_VALUE;
+        Tuple<Float, HeuristicData> y = new Tuple((float) Integer.MIN_VALUE, null);
         if(depth == 0) {
             hasReachedMaxDepth = true;
-            return h(state, action);
+            return h(state, data, action, opponentID);
         }
         if(win != Winner.NOT_FINISHED) {
-        	return utility(win);
+        	return new Tuple(utility(win), null);
         }
 
         for (int newaction : generateActions(state)) {
-            y = Math.max(y,min(result(state, newaction, playerID), alpha, beta,newaction, depth - 1));
+            Tuple<Float, HeuristicData> min = min(result(state, newaction, playerID), data, alpha, beta,newaction, depth - 1);
+            if (min._1 > y._1) {
+                y = min;
+            }
             // tests for possible beta cut
-            if (y >= beta) {
+            if (y._1 >= beta) {
                 cutoffs++;
                 return y;
             }
-            alpha = Math.max(alpha, y);
+
+            alpha = Math.max(alpha, y._1);
 
         }
         return y;
     }
 
-    private float min(LongBoard state,float alpha,float beta,int action,
-            int depth) {
+    private Tuple<Float, HeuristicData> min(LongBoard state, HeuristicData data, float alpha,
+                                            float beta, int action, int depth) {
         statescheack++;
-        float y = Integer.MAX_VALUE;
+        Tuple<Float, HeuristicData> y = new Tuple((float) Integer.MAX_VALUE, data);
 
         Winner win = gameFinished(state);
 
         if (depth == 0) {
             hasReachedMaxDepth = true;
-            return h(state, action);
+            return h(state, null, action, playerID);
         }
         // If the state is a finished state
         if (win != Winner.NOT_FINISHED)
-            return utility(win);
+            return new Tuple(utility(win), null);
 
         for (int newaction : generateActions(state)) {
-            y = Math.min(
-                    y,
-                    max(result(state, newaction, opponentID), alpha, beta,
-                            newaction, depth - 1));
+            Tuple<Float, HeuristicData> max = max(
+                    result(state, newaction, opponentID), data, alpha, beta, newaction, depth - 1
+            );
+
+            if (max._1 < y._1) {
+                y = max;
+            }
+
             // tests for possible alpha cut
-            if (y <= alpha) {
+            if (y._1 <= alpha) {
                 cutoffs++;
                 return y;
             }
-            beta = Math.min(beta, y);
+            beta = Math.min(beta, y._1);
         }
         return y;
     }
@@ -148,11 +165,14 @@ public class GLaDOS implements IGameLogic {
         hasReachedMaxDepth = false;
         //Generate the valid actions from the start state
         for (int action : generateActions(state)) {
-            float max = min(result(state,action,playerID),Integer.MIN_VALUE,Integer.MAX_VALUE,action,depth-1);
+            Tuple<Float, HeuristicData> max = min(
+                    result(state,action,playerID),
+                    H.createHeuristic(), Integer.MIN_VALUE, Integer.MAX_VALUE, action, depth-1
+            );
             //If the current action is better than the previous ones, choose this
-            if(max > y) {
+            if(max._1 > y) {
                 bestAction = action;
-                y = max;
+                y = max._1;
             }
 
         }
@@ -201,7 +221,7 @@ public class GLaDOS implements IGameLogic {
     public void insertCoin(int column, int playerID) {
     	Threats t = new Threats();
         gameBoard.move(column);
-    	t.h(gameBoard, null);
+    	t.h(gameBoard, null, column, playerID);
     }
 
     public int decideNextMove() {
@@ -218,23 +238,24 @@ public class GLaDOS implements IGameLogic {
      * @param <T>  The type of the heuristic data (if any).
      */
     public interface Heuristic<T extends HeuristicData> {
-        public void addMove(int column);
-        public float h(LongBoard state, T data);
+        public T createHeuristic();
+        public Tuple<Float, T> h(LongBoard board, T data, int column, int player);
     }
 
     private class baseLookUp implements Heuristic {
-        public void addMove(int moveColumn) {}
-        public float h(LongBoard state, HeuristicData data) {
-            return 0f;
+        public HeuristicData createHeuristic() { return null; }
+        public Tuple<Float, HeuristicData> h(LongBoard board, HeuristicData data, int moveColumn, int player) {
+            return new Tuple(0f, null);
         }
     }
     
     private class Threats implements Heuristic {
 
-        public void addMove(int column) {}
+        public void addMove() {}
 
-		@Override
-		public float h(LongBoard state, HeuristicData ignoreThisVariable) {
+        public HeuristicData createHeuristic() { return null; }
+
+		public Tuple<Float, HeuristicData> h(LongBoard state, HeuristicData data, int column, int ignoreThis) {
 			int empty = -1;
 			int empty2 = -1;
 			for (int h=0; h <= state.HEIGHT; h++) {
@@ -262,7 +283,7 @@ public class GLaDOS implements IGameLogic {
 				System.out.println(empty + " "  +empty2);
 			}
 			
-			return 0;
+			return new Tuple(0, null);
 		}
     	
 		//Returns placement of the threat
@@ -312,11 +333,7 @@ public class GLaDOS implements IGameLogic {
      */
     private class MovesToWin implements Heuristic<MovesToWin.MTWData> {
 
-        MTWData boardData = new MTWData();
-
-        public void addMove(int column) {
-
-        }
+        public MTWData createHeuristic() { return new MTWData(); }
 
         private List<List<Tuple>> htrace(LongBoard state, int lastMove) {
             return null;
@@ -352,24 +369,15 @@ public class GLaDOS implements IGameLogic {
             return freeOrOwned - owned;
         }
 
-        public float h(LongBoard state, MTWData data){
-            for (int i=0; i<y; i++){
-                System.out.println();
-                for(int j=0; j<x; j++){
-                    //System.out.print("" + state[j][i] + ", ");
+        public Tuple<Float, MTWData> h(LongBoard board, MTWData data, int column, int player) {
+            int row;
+            for (row = 0; row < y; row++) {
+                if (data.board[column][row] == 0) {
+                    data.board[column][row] = player;
+                    break;
                 }
             }
-            System.out.println();
-            //System.console().readLine();
-            return 2f;
-        }
-
-        /**
-         * An int tuple class. Just because I have an inherent disrespect for my RAM. Thanks Java.
-         */
-        class Tuple {
-            final int x, y;
-            Tuple(int x, int y) { this.x = x; this.y = y; }
+            return new Tuple(2f, data);
         }
 
         /**
@@ -379,9 +387,9 @@ public class GLaDOS implements IGameLogic {
             // The board for the current state
             int board[][] = new int[x][y];
             // Moves to win combinations for player 1 (mTWCFP1)
-            List<List<Tuple>> mTWCFP1 = Collections.emptyList();
+            List<List<Tuple<Integer, Integer>>> mTWCFP1 = Collections.emptyList();
             // Moves to win combinations for player 2 (mTWCFP2)
-            List<List<Tuple>> mTWCFP2 = Collections.emptyList();
+            List<List<Tuple<Integer, Integer>>> mTWCFP2 = Collections.emptyList();
 
             /**
              * Creates a MTWData board with no initial coins set.
@@ -396,7 +404,9 @@ public class GLaDOS implements IGameLogic {
              * @param mTWCFP1  The moves-to-win combinations for player 1
              * @param mTWCFP2  The moves-to-win combinations for player 2
              */
-            MTWData(int board[][], List<List<Tuple>> mTWCFP1, List<List<Tuple>> mTWCFP2) {
+            MTWData(int board[][],
+                    List<List<Tuple<Integer, Integer>>> mTWCFP1,
+                    List<List<Tuple<Integer, Integer>>> mTWCFP2) {
                 this.board = board;
                 this.mTWCFP1 = mTWCFP1;
                 this.mTWCFP2 = mTWCFP2;
