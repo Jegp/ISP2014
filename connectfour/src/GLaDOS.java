@@ -20,7 +20,7 @@ public class GLaDOS implements IGameLogic {
     private int statescheack = 0, cutoffs = 0;
     private boolean hasReachedMaxDepth;
     //for search in knowledge base
-    private int startDepth = 13;
+    private int startDepth = 7;
     private Heuristic H;
 
     private ArrayList<Integer> generateActions(LongBoard state) {
@@ -178,6 +178,7 @@ public class GLaDOS implements IGameLogic {
         gameBoard = new LongBoard(x, y);
         if (x == 7 && y == 6){
             H = new baseLookUp();
+            System.out.println("INITTIN, BITCH");
             initKnowledge();
         } else {
             H = new baseLookUp();
@@ -191,8 +192,7 @@ public class GLaDOS implements IGameLogic {
     public static Winner gameFinished(LongBoard board) {
         return board.hasWon() ?
                 ((board.player & 1) == 0 ? Winner.PLAYER1 : Winner.PLAYER2) :
-                (board.player == board.SIZE ? Winner.TIE : Winner.NOT_FINISHED);
-    }
+                (board.player == board.SIZE ? Winner.TIE : Winner.NOT_FINISHED); }
     
     public void insertCoin(int column, int playerID) {
     	Threats t = new Threats();
@@ -219,10 +219,13 @@ public class GLaDOS implements IGameLogic {
 
     private class baseLookUp implements Heuristic {
         public float h(LongBoard state, HeuristicData data) {
-            return 0f;
+            System.out.println(state.toString());
+            //return knowledgeBase.get(state.toString());
+            System.out.println(knowledgeBase.get(state.toString()));
+            return 1f;
         }
     }
-    
+ 
     private class Threats implements Heuristic {
 
 		@Override
@@ -376,6 +379,7 @@ public class GLaDOS implements IGameLogic {
      */
     public class LongBoard {
         // -- The following comments are made for Sigurt, who cannot see the errors in his ways -- //
+        // -- Jens is ukraine                                                                   -- //
         long boards[]; // Two board for player one (0) and player two (1).
         byte height[]; // The largest index of the columns where a coin has been inserted.
         int player = -1; // Set player to -1 to avoid the hasWon method to check for the wrong player
@@ -445,16 +449,31 @@ public class GLaDOS implements IGameLogic {
         }
 
         private int getBit(long l, int n){
-            return (l >> n) & 1;
+            return (int)((l >> n) & 1L);
         }
 
-        public String toString(){
+        @Override
+        public String toString() {
             StringBuffer sBuff = new StringBuffer();
-            for (int i=0, i < SIZE1; i++){
-                int oppBoard = getBit(boards[opponentID -1]);
-                int playBoard = getBit(boards[playerID -1]);
+            for (int i=0; i < SIZE1; i++){
+                if ((i+1)%(H1) == 0) continue;
+                int oppBoard = getBit(boards[opponentID -1], i);
+                int playBoard = getBit(boards[playerID -1], i);
+                String slotState ="";
+                if (oppBoard == 1) {
+                    slotState = "x";
+                } else if (playBoard == 1) {
+                    slotState = "o";
+                } else {
+                    slotState = "b";
+                }
+
+                sBuff.append(slotState);
+                if (i < SIZE1 -2){
+                   sBuff.append(",");
+                }
             }
-            return "fag";
+            return sBuff.toString();
         }
     }
 
@@ -467,6 +486,7 @@ public class GLaDOS implements IGameLogic {
             while ((line = br.readLine()) != null){
                 int commaIdx = line.lastIndexOf(",");
                 knowledgeBase.put(line.substring(0, commaIdx), Float.parseFloat(line.substring(commaIdx+1)));
+                System.out.println(line.substring(0, commaIdx));
             }
             br.close();
         } catch (FileNotFoundException e) {
@@ -474,7 +494,6 @@ public class GLaDOS implements IGameLogic {
         } catch (IOException e) {
             throw new RuntimeException("Some IO went wrong me thinks");
         }
-        System.out.println("lars");
     }
 }
 // vim: set ts=4 sw=4 expandtab:
