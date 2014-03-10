@@ -39,7 +39,7 @@ public class GLaDOS implements IGameLogic {
         if (state.isPlayable(middle)) {
             result.add(middle);
         }
-        for (int i=1; i <= x/2; i++){
+        for (int i=1; i <= x/2; i++) {
             if(middle + i < x) {
                 if (state.isPlayable(middle + i)) {
                     result.add(middle + i);
@@ -57,9 +57,8 @@ public class GLaDOS implements IGameLogic {
     /**
      * Calls the underlying heuristics by inserting a coin and calculating the win-value.
      */
-    private Tuple<Float, HeuristicData> h(LongBoard board, HeuristicData data, int column, int opponent){
-        HeuristicData newData = H.moveHeuristic(data, column, opponent);
-        return H.h(board, newData);
+    private Tuple<Float, HeuristicData> h(LongBoard board, HeuristicData data){
+        return H.h(board, data);
     }
 
     private float utility(Winner win){
@@ -81,14 +80,16 @@ public class GLaDOS implements IGameLogic {
         Tuple<Float, HeuristicData> y = new Tuple<Float, HeuristicData>((float) Integer.MIN_VALUE, null);
         if(depth == 0) {
             hasReachedMaxDepth = true;
-            return h(state, data, action, opponentID);
+            HeuristicData newData = H.moveHeuristic(data, action, opponentID);
+            return h(state, newData);
         }
         if(win != Winner.NOT_FINISHED) {
         	return new Tuple<Float, HeuristicData>(utility(win), null);
         }
 
         for (int newaction : generateActions(state)) {
-            Tuple<Float, HeuristicData> min = min(result(state, newaction), data, alpha, beta,newaction, depth - 1);
+            HeuristicData newData = H.moveHeuristic(data, newaction, opponentID);
+            Tuple<Float, HeuristicData> min = min(result(state, newaction), newData, alpha, beta,newaction, depth - 1);
             if (min._1 > y._1) {
                 y = min;
             }
@@ -113,15 +114,17 @@ public class GLaDOS implements IGameLogic {
 
         if (depth == 0) {
             hasReachedMaxDepth = true;
-            return h(state, data, action, playerID);
+            HeuristicData newData = H.moveHeuristic(data, action, playerID);
+            return h(state, newData);
         }
         // If the state is a finished state
         if (win != Winner.NOT_FINISHED)
             return new Tuple<Float, HeuristicData>(utility(win), null);
 
         for (int newaction : generateActions(state)) {
+            HeuristicData newData = H.moveHeuristic(data, action, playerID);
             Tuple<Float, HeuristicData> max = max(
-                    result(state, newaction), data, alpha, beta, newaction, depth - 1
+                    result(state, newaction), newData, alpha, beta, newaction, depth - 1
             );
 
             if (max._1 < y._1) {
@@ -344,7 +347,7 @@ public class GLaDOS implements IGameLogic {
         private void traceDirection(Tuple<List<Tuple<Integer, Integer>>, List<Tuple<Integer, Integer>>> list, int board[][],
                                     int startX, int startY, int dx, int dy) {
             // Return if we are outside the board
-            if ((startX == x || startX < 0) || (startY == y || startY < 0)) return;
+            if ((startX >= x || startX < 0) || (startY >= y || startY < 0)) return;
 
             // Find the value at the board and store its coordinates if it belongs to a player
             int value = board[startX][startY];
@@ -359,22 +362,41 @@ public class GLaDOS implements IGameLogic {
             }
         }
 
-        private void updateMTWCs(MTWData data) {
-            // Find horizontal MTW
+        private void addMTWCs(MTWData data, int x, int y, int dx, int dy) {
+            // Create tuples of lists of tuples of coordinates with annoying syntax
             Tuple<List<Tuple<Integer, Integer>>, List<Tuple<Integer, Integer>>> list =
                     new Tuple<List<Tuple<Integer, Integer>>, List<Tuple<Integer, Integer>>>
-                            (new ArrayList<Tuple<Integer, Integer>>(),
-                                    new ArrayList<Tuple<Integer, Integer>>());
-            traceDirection(list, data.board, data.column, data.row, 0, 1);
-            traceDirection(list, data.board, data.column - 1, data.row, -0, 1);
+                            (new ArrayList<Tuple<Integer, Integer>>(), new ArrayList<Tuple<Integer, Integer>>());
+            // Trace in the given direction and it's opposite direction
+            traceDirection(list, data.board,       x,       y,  dx,  dy);
+            traceDirection(list, data.board,  x - dx,  y - dx, -dx, -dy);
+            // Add to heuristic data if not empty
+            if (!list._1.isEmpty()) data.mTWCFP1.add(list._1);
+            if (!list._2.isEmpty()) data.mTWCFP2.add(list._2);
+        }
 
-            if (!(list._1.isEmpty() && list._2.isEmpty())) {
-                System.out.println("Found: " + list._1.size() + " " + list._2.size());
-            }
+        private void updateMTWCs(MTWData data) {
+            // Trace horizontal
+            addMTWCs(data, data.column, data.row, 1, 0);
+
+            // Trace vertical
+            addMTWCs(data, data.column, data.row, 0, 1);
+
+            // Trace from left to right
+            addMTWCs(data, data.column, data.row, -1, 1);
+
+            // Trace from right to left
+            addMTWCs(data, data.column, data.row, -1, -1);
         }
 
         private int getMTW(List<List<Tuple<Integer, Integer>>> mTWCs) {
-            return 0;
+            int moves = 4;
+            System.out.println(mTWCs.size());
+            for (List<Tuple<Integer, Integer>> list : mTWCs) {
+                int size = list.size();
+                if (4 - size < moves) moves = 4 - size;
+            }
+            return moves;
         }
 
         public Tuple<Float, MTWData> h(LongBoard board, MTWData data) {
@@ -383,7 +405,9 @@ public class GLaDOS implements IGameLogic {
 
             // Find the least MTW
             int mTWP1 = getMTW(data.mTWCFP1);
-            int mTWP2 = getMTW(data.mTWCFP1);
+            int mTWP2 = getMTW(data.mTWCFP2);
+
+            System.out.println(mTWP1 + " " + mTWP2 + " = " + (mTWP1 - mTWP2));
 
             // Calculate and return heuristic value (between -1 and 1)
             float h = mTWP2 - mTWP1;
@@ -397,9 +421,9 @@ public class GLaDOS implements IGameLogic {
             // The board for the current state
             int board[][] = new int[x][y];
             // Moves to win combinations for player 1 (mTWCFP1)
-            List<List<Tuple<Integer, Integer>>> mTWCFP1 = Collections.emptyList();
+            List<List<Tuple<Integer, Integer>>> mTWCFP1 = new ArrayList<List<Tuple<Integer, Integer>>>();
             // Moves to win combinations for player 2 (mTWCFP2)
-            List<List<Tuple<Integer, Integer>>> mTWCFP2 = Collections.emptyList();
+            List<List<Tuple<Integer, Integer>>> mTWCFP2 = new ArrayList<List<Tuple<Integer, Integer>>>();
 
             int column, row, player;
 
@@ -419,6 +443,9 @@ public class GLaDOS implements IGameLogic {
                 Collections.copy(old.mTWCFP1, this.mTWCFP2);
             }
 
+            /**
+             * Adds a coin to the current board in the given column.
+             */
             public void move(int column, int player) {
                 this.column = column;
                 this.player = player;
