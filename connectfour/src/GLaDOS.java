@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.omg.CORBA.portable.ValueBase;
+
 /**
  * The cake is a lie. Awesome quote from exercise description: 'Finally, it is
  * not recommended to write all the code in a single class e class.'
@@ -19,7 +21,8 @@ public class GLaDOS implements IGameLogic {
     private int playerID;
     private int opponentID;
     private LongBoard gameBoard;
-    private int statesChecked = 0, cutoffs = 0;
+    private HashMap<String, Float> cache = new HashMap<>();
+    private int statesChecked = 0, cutoffs = 0,cacheHits = 0;;
     private boolean hasReachedMaxDepth;
     //for search in knowledge base
     private int startDepth = 13;
@@ -82,12 +85,20 @@ public class GLaDOS implements IGameLogic {
         Tuple<Float, HeuristicData> y = new Tuple<Float, HeuristicData>((float) Integer.MIN_VALUE, null);
         
         if(win != Winner.NOT_FINISHED) {
-        	return new Tuple<Float, HeuristicData>(utility(win), null);
+        	float value = utility(win);
+        	cache.put(state.toString(), value);
+        	return new Tuple<Float, HeuristicData>(value, null);
         }
+        if(cache.get(state.toString()) != null) {
+        	cacheHits++;
+			return new Tuple<Float, HeuristicData>(cache.get(state.toString()),null);
+		}
         if(depth == 0) {
             hasReachedMaxDepth = true;
             HeuristicData newData = H.moveHeuristic(data, action, opponentID);
-            return h(state, newData);
+            Tuple<Float, HeuristicData> value = h(state, newData);
+            cache.put(state.toString(), value._1);
+            return value;
         }
 
 
@@ -106,6 +117,7 @@ public class GLaDOS implements IGameLogic {
             alpha = Math.max(alpha, y._1);
 
         }
+        cache.put(state.toString(), y._1);
         return y;
     }
 
@@ -117,13 +129,23 @@ public class GLaDOS implements IGameLogic {
         Winner win = gameFinished(state);
 
         // If the state is a finished state
-        if (win != Winner.NOT_FINISHED)
-            return new Tuple<Float, HeuristicData>(utility(win), null);
-
+        if (win != Winner.NOT_FINISHED) {
+        	float value = utility(win);
+        	cache.put(state.toString(), value);
+            return new Tuple<Float, HeuristicData>(value, null);
+        }
+        
+        if(cache.get(state.toString()) != null) {
+        	cacheHits++;
+			return new Tuple<Float, HeuristicData>(cache.get(state.toString()),null);
+		}
+        
         if (depth == 0) {
             hasReachedMaxDepth = true;
             HeuristicData newData = H.moveHeuristic(data, action, playerID);
-            return h(state, newData);
+            Tuple<Float, HeuristicData> value = h(state, newData);
+            cache.put(state.toString(), value._1);
+            return value;
         }
 
         for (int newaction : generateActions(state)) {
@@ -143,6 +165,7 @@ public class GLaDOS implements IGameLogic {
             }
             beta = Math.min(beta, y._1);
         }
+        cache.put(state.toString(), y._1);
         return y;
     }
 
@@ -170,9 +193,11 @@ public class GLaDOS implements IGameLogic {
         int bestAction = -1;
         cutoffs = 0;
         statesChecked = 0;
+        cacheHits = 0;
+        cache = new HashMap<String, Float>();
+        hasReachedMaxDepth = false;
         float y = Integer.MIN_VALUE;
  
-        hasReachedMaxDepth = false;
         //Generate the valid actions from the start state
         for (int action : generateActions(state)) {
             Tuple<Float, HeuristicData> max = min(
@@ -188,6 +213,7 @@ public class GLaDOS implements IGameLogic {
         }
         System.out.println("States: " + statesChecked);
         System.out.println("Cutoffs; "+ cutoffs);
+        System.out.println("CacheHits; "+ cacheHits);
         System.out.println("H - value: " + y);
         System.out.println("Move: " + bestAction);
         System.out.println();
@@ -211,10 +237,10 @@ public class GLaDOS implements IGameLogic {
         }
         gameBoard = new LongBoard(x, y);
         if (x == 7 && y == 6){
-            H = new baseLookUp();
+            H = new Threats();
             initKnowledge();
         } else {
-            H = new MovesToWin();
+            H = new Threats();
         }
     }
 
