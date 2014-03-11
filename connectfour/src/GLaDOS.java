@@ -19,7 +19,7 @@ public class GLaDOS implements IGameLogic {
     private int playerID;
     private int opponentID;
     private LongBoard gameBoard;
-    private int statescheack = 0, cutoffs = 0;
+    private int statesChecked = 0, cutoffs = 0;
     private boolean hasReachedMaxDepth;
     //for search in knowledge base
     private int startDepth = 13;
@@ -78,16 +78,18 @@ public class GLaDOS implements IGameLogic {
     private Tuple<Float, HeuristicData> max(LongBoard state, HeuristicData data, float alpha,
                                             float beta, int action, int depth) {
         Winner win = gameFinished(state);
-        statescheack++;
+        statesChecked++;
         Tuple<Float, HeuristicData> y = new Tuple<Float, HeuristicData>((float) Integer.MIN_VALUE, null);
+        
+        if(win != Winner.NOT_FINISHED) {
+        	return new Tuple<Float, HeuristicData>(utility(win), null);
+        }
         if(depth == 0) {
             hasReachedMaxDepth = true;
             HeuristicData newData = H.moveHeuristic(data, action, opponentID);
             return h(state, newData);
         }
-        if(win != Winner.NOT_FINISHED) {
-        	return new Tuple<Float, HeuristicData>(utility(win), null);
-        }
+
 
         for (int newaction : generateActions(state)) {
             HeuristicData newData = H.moveHeuristic(data, newaction, opponentID);
@@ -109,19 +111,20 @@ public class GLaDOS implements IGameLogic {
 
     private Tuple<Float, HeuristicData> min(LongBoard state, HeuristicData data, float alpha,
                                             float beta, int action, int depth) {
-        statescheack++;
+        statesChecked++;
         Tuple<Float, HeuristicData> y = new Tuple<Float, HeuristicData>((float) Integer.MAX_VALUE, data);
 
         Winner win = gameFinished(state);
+
+        // If the state is a finished state
+        if (win != Winner.NOT_FINISHED)
+            return new Tuple<Float, HeuristicData>(utility(win), null);
 
         if (depth == 0) {
             hasReachedMaxDepth = true;
             HeuristicData newData = H.moveHeuristic(data, action, playerID);
             return h(state, newData);
         }
-        // If the state is a finished state
-        if (win != Winner.NOT_FINISHED)
-            return new Tuple<Float, HeuristicData>(utility(win), null);
 
         for (int newaction : generateActions(state)) {
             HeuristicData newData = H.moveHeuristic(data, action, playerID);
@@ -165,7 +168,8 @@ public class GLaDOS implements IGameLogic {
 
     private int minimax(LongBoard state, int depth) {
         int bestAction = -1;
-        statescheack = 0;
+        cutoffs = 0;
+        statesChecked = 0;
         float y = Integer.MIN_VALUE;
  
         hasReachedMaxDepth = false;
@@ -182,7 +186,7 @@ public class GLaDOS implements IGameLogic {
             }
 
         }
-        System.out.println("States: " + statescheack);
+        System.out.println("States: " + statesChecked);
         System.out.println("Cutoffs; "+ cutoffs);
         System.out.println("H - value: " + y);
         System.out.println("Move: " + bestAction);
