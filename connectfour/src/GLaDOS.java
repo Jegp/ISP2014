@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * The cake is a lie. Awesome quote from exercise description: 'Finally, it is
@@ -259,77 +261,210 @@ public class GLaDOS implements IGameLogic {
         public HeuristicData moveHeuristic(HeuristicData data, int column, int p) { return null; }
 
 		public Tuple<Float, HeuristicData> h(LongBoard state, HeuristicData data) {
-			int empty = -1;
-			int empty2 = -1;
+			int player = -1;
+			Set<Integer> AEVEN = new TreeSet<>();
+			Set<Integer> AODD = new TreeSet<>();
+			Set<Integer> BEVEN = new TreeSet<>();
+			Set<Integer> BODD = new TreeSet<>();
+			ArrayList<Set<Integer>> lists = new ArrayList<Set<Integer>>();
+			lists.add(0, AEVEN);
+			lists.add(1, BEVEN);
+			lists.add(0 + 2, AODD);
+			lists.add(1 + 2, BODD);
 			for (int h=0; h <= state.HEIGHT; h++) {
-			      for (int w=h; w < state.SIZE1; w+=state.H1) {
-				long mask = 1l<<w;
-				//AI owns postion
-				if((state.boards[playerID-1] & mask) !=0) {
-					if(h + 3 < state.HEIGHT) {
-						empty=explore(w, 3, 1, playerID-1, state, -1, 0);
+				for (int w=h; w < state.SIZE1; w+=state.H1) {
+					player = -1;
+					long mask = 1l<<w;
+					//A owns postion
+					if((state.boards[0] & mask) !=0) {
+						player = 0;
+					}
+					//B owns postion
+					if((state.boards[1] & mask) !=0) {
+						player = 1;
+					} 
+
+					if(player != -1) {
+						//VERT
+						if(h + 3 < state.HEIGHT) {
+							int emptyPos = explore(w, 3, 1, player, state, -1, 0);
+							if(emptyPos != -1) {
+								//System.err.println(w);
+								//System.err.println("Found threat VERT " + player + " at pos " + emptyPos);
+								lists.get(player + (emptyPos%2)*2).add(emptyPos);
+							}
+						}
+						//HORI
+						if((w / state.H1)+ 3 < state.WIDTH) {
+							int emptyPos = explore(w, 3, state.H1, player, state, -1, 0);
+							if(emptyPos != -1) {
+								//System.err.println(w);
+								//System.err.println("Found threat HORI " + player + " at pos " + emptyPos);
+								lists.get(player+ (emptyPos%2)*2).add(emptyPos);
+							}
+						}
+						// '/'
+						if((h + 3 < state.HEIGHT) && ((w / state.H1)+ 3 < state.WIDTH)) {
+							int emptyPos = explore(w, 3, state.H2, player, state, -1, 0);
+							if(emptyPos != -1) {
+								//System.err.println(w);
+								//System.err.println("Found threat / " + player + " at pos " + emptyPos);
+								lists.get(player+ (emptyPos%2)*2).add(emptyPos);
+							}
+						}
+					}
+								//No one owns postion
+					else {
+						//VERT
+						if(h + 3 < state.HEIGHT) {
+							int play = zeroExplore(w,3,1,-1,state);
+							if(play != -1) {
+								//System.err.println(w);
+								//System.err.println("Found Threat VERT " + play + " at pos " + w);
+								lists.get(play+ (w%2)*2).add(w);
+							}
+						}
+						//HORI
+						if((w / state.H1)+ 3 < state.WIDTH) {
+							int play = zeroExplore(w,3,state.H1,-1,state);
+							if(play != -1) {
+							//	System.err.println(w);
+								//System.err.println("Found Threat HORI " + play + " at pos " + w);
+								lists.get(play+ (w%2)*2).add(w);
+							}
+						}
+						// '/'
+						if((h + 3 < state.HEIGHT) && ((w / state.H1)+ 3 < state.WIDTH)) {
+							int play = zeroExplore(w,3,state.H2,-1,state);
+							if(play != -1) {
+					//			System.err.println(w);
+						//		System.err.println("Found Threat / " + play + " at pos " + w);
+								lists.get(play+ (w%2)*2).add(w);
+							}
+						}
+						if(h + 3 < state.HEIGHT && ((w / state.H1) - 3 >= 0)) {
+							int play = zeroExplore(w,3,-state.HEIGHT,-1,state);
+							if(play != -1) {
+			//					System.err.println(w);
+				//				System.err.println("Found Threat \\ " + play + " at pos " + w);
+								lists.get(play+ (w%2)*2).add(w);
+							}
+						}
 					}
 				}
-				//Opponent owns postion
-				else if((state.boards[opponentID-1] & mask) !=0) {
-					if(h + 3 < state.HEIGHT) {
-						empty2 = explore(w, 3, 1, opponentID-1, state, -1, 0);
-					}
-				} 
-				//No one owns postion
-				else {
-					int player = zeroExplore(w,3,1,-1,state);
+			}
+		/* for (Integer set : lists.get(0)) {
+			System.err.println("A");
+			System.err.println(set);
+		}
+		 for (Integer set : lists.get(1)) {
+
+				System.err.println("B");
+				System.err.println(set);
+			}
+		 for (Integer set : lists.get(2)) {
+			System.err.println("AODD");
+			System.err.println(set);
+		}
+		 for (Integer set : lists.get(3)) {
+
+				System.err.println("BODD");
+				System.err.println(set);
+			}
+		 */
+		 int neg = 0;
+		 if(playerID == 1) {
+			 neg = 1;
+		 } else {
+			 neg = -1;
+		 }
+		 
+		 for (Integer pos : AODD) {
+			int col = pos/state.HEIGHT;
+			if(!ThreatsBelow(col, pos, BEVEN) && !ThreatsInOtherColums(col,BODD)) {
+				//WIN FOR A
+				return new Tuple<Float, HeuristicData>(0.9F*neg,null);
+			}
+		 }
+		 int count = 0;
+		 for (Integer pos : AODD) {
+				int col = pos/state.HEIGHT;
+				if(!ThreatsBelow(col, pos, BEVEN)) {
+					count++;
 				}
-			}
-			}
-			if(empty != -1 || empty2 != -1) {
-				System.out.println(empty + " "  +empty2);
-			}
-			
-			return new Tuple<Float, HeuristicData>(0f, null);
+			 }
+		 if(count > BODD.size() && BEVEN.size() == 0) {
+			 return new Tuple<Float, HeuristicData>(0.9F * neg,null);
+		 }
+		 
+		 if(BEVEN.size() > 0) {
+			 return new Tuple<Float, HeuristicData>(-0.9F *neg,null);
+		 }
+				
+		 return new Tuple<Float, HeuristicData>(0F,null);
 		}
     	
-		//Returns placement of the threat
-		private int explore(int startPostion, int depth, int dicrection, int lastFoundPlayer, LongBoard state,int threatPlacement, int emptyPostions) {
-			if(depth == 0) {
-				return threatPlacement;
+		public boolean ThreatsBelow(int col,int pos,Set<Integer> haystack) {
+			for (Integer pos2 : haystack) {
+				if(pos2/gameBoard.HEIGHT == col) {
+					if(pos2 < pos) {
+						return true;
+					}
+				}
 			}
-			long mask = 1l <<(startPostion + dicrection);
-			if((state.boards[lastFoundPlayer] & mask) != 0) {
-				return explore(startPostion + dicrection, depth-1, dicrection, lastFoundPlayer, state,-1,0);
-			} else if ((state.boards[Math.abs(lastFoundPlayer-1)] & mask) != 0) {
-				return -1;
-			} else {
-				if(emptyPostions == 0) {
-					return explore(startPostion + dicrection, depth-1, dicrection, lastFoundPlayer, state,startPostion+dicrection,1);
+			return false;
+		}
+		
+		public boolean ThreatsInOtherColums(int col,Set<Integer> haystack) {
+			for (Integer pos2 : haystack) {
+				if(pos2/gameBoard.HEIGHT != col) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+			//Returns placement of the threat
+			private int explore(int startPostion, int depth, int dicrection, int lastFoundPlayer, LongBoard state,int threatPlacement, int emptyPostions) {
+				if(depth == 0) {
+					return threatPlacement;
+				}
+				long mask = 1l <<(startPostion + dicrection);
+				if((state.boards[lastFoundPlayer] & mask) != 0) {
+					return explore(startPostion + dicrection, depth-1, dicrection, lastFoundPlayer, state,-1,emptyPostions);
+				} else if ((state.boards[Math.abs(lastFoundPlayer-1)] & mask) != 0) {
+					return -1;
+				} else {
+					if(emptyPostions == 0) {
+						return explore(startPostion + dicrection, depth-1, dicrection, lastFoundPlayer, state,startPostion+dicrection,1);
+					} else {
+						return -1;
+					}
+				}
+			}
+
+			//Returns the index of the player who owns the threat
+			private int zeroExplore(int startPostion, int depth, int dicrection, int lastFoundPlayer, LongBoard state) {
+				if(depth == 0) {
+					return lastFoundPlayer;
+				}
+				long mask = 1l <<(startPostion + dicrection);
+
+				if((state.boards[0] & mask) != 0) {
+					if(lastFoundPlayer == 0 || lastFoundPlayer == -1) {
+						return zeroExplore(startPostion + dicrection, depth-1, dicrection, 0, state);
+					}
+					return -1;
+				} else if ((state.boards[1] & mask) != 0) {
+					if(lastFoundPlayer == 1 || lastFoundPlayer == -1) {
+						return zeroExplore(startPostion + dicrection, depth-1, dicrection, 1, state);
+					}
+					return -1;
 				} else {
 					return -1;
 				}
 			}
 		}
-		
-		//Returns the index of the player who owns the threat
-		private int zeroExplore(int startPostion, int depth, int dicrection, int lastFoundPlayer, LongBoard state) {
-			if(depth == 0) {
-				return lastFoundPlayer;
-			}
-			long mask = 1l <<(startPostion + dicrection);
-			
-			if((state.boards[0] & mask) != 0) {
-				if(lastFoundPlayer == 0 || lastFoundPlayer == -1) {
-					return zeroExplore(startPostion + dicrection, depth-1, dicrection, 0, state);
-				}
-				return -1;
-			} else if ((state.boards[1] & mask) != 0) {
-				if(lastFoundPlayer == 1 || lastFoundPlayer == -1) {
-					return zeroExplore(startPostion + dicrection, depth-1, dicrection, 1, state);
-				}
-				return -1;
-			} else {
-				return -1;
-			}
-		}
-    }
 
     /**
      * A heuristic that considers moves to win.
