@@ -111,6 +111,7 @@ public class GLaDOS implements IGameLogic {
             // tests for possible beta cut
             if (y._1 >= beta) {
                 cutoffs++;
+                cache.put(state.toString(), y._1);
                 return y;
             }
 
@@ -161,6 +162,7 @@ public class GLaDOS implements IGameLogic {
             // tests for possible alpha cut
             if (y._1 <= alpha) {
                 cutoffs++;
+                cache.put(state.toString(), y._1);
                 return y;
             }
             beta = Math.min(beta, y._1);
@@ -172,7 +174,8 @@ public class GLaDOS implements IGameLogic {
     // knowledge!
     public int knowledgeSearch() {
         hasReachedMaxDepth = true;
-        return minimax(gameBoard, startDepth--);
+        //return minimax(gameBoard, startDepth--);
+        return iterativeSearch();
     }
 
     // Iterative
@@ -182,7 +185,7 @@ public class GLaDOS implements IGameLogic {
         hasReachedMaxDepth = true;
         // TODO stop if we find a sure win util = 1;
         // TODO make stop after x sec. maybe with an exception
-        while (i < 11 && hasReachedMaxDepth) {
+        while (i < 14 && hasReachedMaxDepth) {
             System.out.println("depth: " + i);
             move = minimax(gameBoard, ++i);
         }
@@ -383,7 +386,7 @@ public class GLaDOS implements IGameLogic {
 					}
 				}
 			}
-		/* for (Integer set : lists.get(0)) {
+		/*for (Integer set : lists.get(0)) {
 			System.err.println("A");
 			System.err.println(set);
 		}
@@ -400,8 +403,8 @@ public class GLaDOS implements IGameLogic {
 
 				System.err.println("BODD");
 				System.err.println(set);
-			}
-		 */
+			}*/
+		 
 		 int neg = 0;
 		 if(playerID == 1) {
 			 neg = 1;
@@ -688,6 +691,35 @@ public class GLaDOS implements IGameLogic {
                     (vertical & (vertical >> 2))) != 0;
         }
 
+        private int getBit(long l, int n){
+            return (int)((l >> n) & 1L);
+        }
+        
+        @Override
+        public String toString() {
+            StringBuffer sBuff = new StringBuffer();
+            for (int i=0; i < SIZE1; i++){
+                if ((i+1)%(H1) == 0) continue;
+                int oppBoard = getBit(boards[opponentID -1], i);
+                int playBoard = getBit(boards[playerID -1], i);
+                String slotState ="";
+                if (oppBoard == 1) {
+                    slotState = "o";
+                } else if (playBoard == 1) {
+                    slotState = "x";
+                } else {
+                    slotState = "b";
+                }
+
+                sBuff.append(slotState);
+                if (i < SIZE1 -2){
+                   sBuff.append(",");
+                }
+            }
+            return sBuff.toString();
+        }
+    
+        
         boolean isPlayable(int column) {
             return ((boards[player & 1] | 1L << height[column]) & TOP) == 0;
         }
