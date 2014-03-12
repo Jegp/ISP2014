@@ -206,7 +206,6 @@ public class GLaDOS implements IGameLogic {
         gameBoard = new LongBoard(x, y);
         if (x == 7 && y == 6){
             H = new baseLookUp();
-            System.out.println("INITTIN, BITCH");
             initKnowledge();
         } else {
             H = new baseLookUp();
@@ -250,10 +249,10 @@ public class GLaDOS implements IGameLogic {
         public Tuple<Float, HeuristicData> h(LongBoard board, HeuristicData data, int moveColumn, int player) {
             Float ret = knowledgeBase.get(board.toString());
             if (ret == null){
-                System.out.println("State not in base:");
-                System.out.println(board.toString());
-                ret = -1000f;
+                ret = 0f;
             }
+            ret = playerID == 1 ? ret : -ret;
+
             return new Tuple<Float, HeuristicData>(ret, null);
         }
     }
