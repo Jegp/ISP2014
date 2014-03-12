@@ -191,7 +191,6 @@ public class GLaDiOS implements IGameLogic {
         hasReachedMaxDepth = true;
         // TODO stop if we find a sure win util = 1;
         // TODO make stop after x sec. maybe with an exception
-        start = System.currentTimeMillis();
 
         while (i < 20 && hasReachedMaxDepth) {
             System.out.println("depth: " + i);
@@ -282,6 +281,7 @@ public class GLaDiOS implements IGameLogic {
     }
 
     public int decideNextMove() {
+        start = System.currentTimeMillis();
         return knowledgeSearch();
     }
 
