@@ -9,7 +9,7 @@ import java.util.*;
  * The cake is a lie. Awesome quote from exercise description: 'Finally, it is
  * not recommended to write all the code in a single class e class.'
  */
-public class GLaDOS implements IGameLogic {
+public class GLaDiOS implements IGameLogic {
     private HashMap<String, Float> knowledgeBase;
     private int x = 0, y = 0;
     private int playerID;
@@ -240,10 +240,10 @@ public class GLaDOS implements IGameLogic {
         }
         gameBoard = new LongBoard(x, y);
         if (x == 7 && y == 6){
-            H = new Threats();
+            H = new MovesToWin();
             initKnowledge();
         } else {
-            H = new Threats();
+            H = new MovesToWin();
         }
     }
 
