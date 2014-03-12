@@ -738,7 +738,7 @@ public class GLaDOS implements IGameLogic {
             String line;
             while ((line = br.readLine()) != null){
                 int commaIdx = line.lastIndexOf(",");
-                knowledgeBase.put(line.substring(0, commaIdx), Float.parseFloat(line.substring(commaIdx+1)));
+                knowledgeBase.put(line.substring(0, commaIdx), Float.parseFloat(line.substring(commaIdx + 1)));
             }
             br.close();
         } catch (FileNotFoundException e) {
