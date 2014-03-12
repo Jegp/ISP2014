@@ -221,6 +221,8 @@ public class GLaDiOS implements IGameLogic {
  
         //Generate the valid actions from the start state
         for (int action : generateActions(state)) {
+            // Stop if we're out of time
+            if (isTimeUp()) break;
             Tuple<Float, HeuristicData> max = min(
                     result(state,action),
                     H.createHeuristic(), Integer.MIN_VALUE, Integer.MAX_VALUE, action, depth - 1
@@ -545,7 +547,8 @@ public class GLaDiOS implements IGameLogic {
 
             // Find the value at the board and store its coordinates if it belongs to a player
             int value = board[startX][startY];
-            if (value != 0) {
+            // Test that there exists a coin in the slot and that there is a coin below
+            if (value != 0 && (startY == 0 || board[startX][startY - 1] != 0)) {
                 Tuple<Integer, Integer> next = new Tuple<>(startX, startY);
                 if (value == playerID) {
                     list._1.add(next);
@@ -569,7 +572,34 @@ public class GLaDiOS implements IGameLogic {
             if (!list._2.isEmpty()) data.mTWCFP2.add(list._2);
         }
 
+        /**
+         * Removes MTWCs that are 'destroyed' by the latest move.
+         */
+        private void removeBrokenMTWCs(MTWData data) {
+            List<List<Tuple<Integer, Integer>>> list;
+            if (data.player == playerID) {
+                list = data.mTWCFP1;
+            } else {
+                list = data.mTWCFP2;
+            }
+
+            for (List<Tuple<Integer, Integer>> combination : list) {
+                int size = combination.size();
+                for (int i = 0; i < size; i++) {
+                    Tuple<Integer, Integer> coordinate = combination.get(i);
+                    if (coordinate._1 == data.column && coordinate._2 == data.row) {
+                        System.out.println("Found");
+                        combination.remove(i);
+                        i--; size--;
+                    }
+                }
+            }
+        }
+
         private void updateMTWCs(MTWData data) {
+            // Remove old MTWCs
+            removeBrokenMTWCs(data);
+
             // Trace horizontal
             addMTWCs(data, data.column, data.row, 1, 0);
 
