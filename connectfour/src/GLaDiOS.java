@@ -595,7 +595,6 @@ public class GLaDiOS implements IGameLogic {
                     // Remove the combination if it contains the current coordinate
                     // (safely by using the iterator remove)
                     if (coordinate._1.equals(data.column) && coordinate._2.equals(data.row)) {
-                        System.out.println(coordinate.equals(new Tuple<Integer, Integer>(data.column, data.row)));
                         combinations.remove();
                         break;
                     }
