@@ -3,3 +3,6 @@ connectfour/bin/
 *.iml
 *.idea
 *~
+*#
+*.log
+tmp
