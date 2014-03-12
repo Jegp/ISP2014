@@ -260,7 +260,7 @@ public class GLaDOS implements IGameLogic {
         }
         gameBoard = new LongBoard(x, y);
         if (x == 7 && y == 6){
-            H = new MovesToWin();
+            H = new baseLookUp();
             initKnowledge();
         } else {
             H = new MovesToWin();
