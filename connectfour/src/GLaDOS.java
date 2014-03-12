@@ -2,14 +2,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-
-import org.omg.CORBA.portable.ValueBase;
+import java.util.*;
 
 /**
  * The cake is a lie. Awesome quote from exercise description: 'Finally, it is
@@ -22,7 +15,7 @@ public class GLaDOS implements IGameLogic {
     private int opponentID;
     private LongBoard gameBoard;
     private HashMap<String, Float> cache = new HashMap<>();
-    private int statesChecked = 0, cutoffs = 0,cacheHits = 0;;
+    private int statesChecked = 0, cutoffs = 0,cacheHits = 0;
     private boolean hasReachedMaxDepth;
     //for search in knowledge base
     private int startDepth = 13;
@@ -38,13 +31,13 @@ public class GLaDOS implements IGameLogic {
     }
 
     private ArrayList<Integer> generateActions(LongBoard state) {
-        ArrayList<Integer> result = new ArrayList<Integer>();
+        ArrayList<Integer> result = new ArrayList<>();
         int middle = x/2;
         //TODO choose random when x is even
         if (state.isPlayable(middle)) {
             result.add(middle);
         }
-        for (int i=1; i <= x/2; i++) {
+        for (int i=1; i <= x/2; i++)  {
             if(middle + i < x) {
                 if (state.isPlayable(middle + i)) {
                     result.add(middle + i);
@@ -83,16 +76,16 @@ public class GLaDOS implements IGameLogic {
         Winner win = gameFinished(state);
         statesChecked++;
         Tuple<Float, HeuristicData> y = new Tuple<Float, HeuristicData>((float) Integer.MIN_VALUE, null);
-        
+
         if(win != Winner.NOT_FINISHED) {
         	float value = utility(win);
         	cache.put(state.toString(), value);
         	return new Tuple<Float, HeuristicData>(value, null);
         }
-        if(cache.get(state.toString()) != null) {
+        /*if(cache.get(state.toString()) != null) {
         	cacheHits++;
 			return new Tuple<Float, HeuristicData>(cache.get(state.toString()),null);
-		}
+		}*/
         if(depth == 0) {
             hasReachedMaxDepth = true;
             HeuristicData newData = H.moveHeuristic(data, action, opponentID);
@@ -100,7 +93,6 @@ public class GLaDOS implements IGameLogic {
             cache.put(state.toString(), value._1);
             return value;
         }
-
 
         for (int newaction : generateActions(state)) {
             HeuristicData newData = H.moveHeuristic(data, newaction, opponentID);
@@ -136,10 +128,10 @@ public class GLaDOS implements IGameLogic {
             return new Tuple<Float, HeuristicData>(value, null);
         }
         
-        if(cache.get(state.toString()) != null) {
+        /*if(cache.get(state.toString()) != null) {
         	cacheHits++;
 			return new Tuple<Float, HeuristicData>(cache.get(state.toString()),null);
-		}
+		}*/
         
         if (depth == 0) {
             hasReachedMaxDepth = true;
@@ -185,7 +177,7 @@ public class GLaDOS implements IGameLogic {
         hasReachedMaxDepth = true;
         // TODO stop if we find a sure win util = 1;
         // TODO make stop after x sec. maybe with an exception
-        while (i < 14 && hasReachedMaxDepth) {
+        while (i < 13 && hasReachedMaxDepth) {
             System.out.println("depth: " + i);
             move = minimax(gameBoard, ++i);
         }
@@ -205,7 +197,7 @@ public class GLaDOS implements IGameLogic {
         for (int action : generateActions(state)) {
             Tuple<Float, HeuristicData> max = min(
                     result(state,action),
-                    H.createHeuristic(), Integer.MIN_VALUE, Integer.MAX_VALUE, action, depth-1
+                    H.createHeuristic(), Integer.MIN_VALUE, Integer.MAX_VALUE, action, depth - 1
             );
             //If the current action is better than the previous ones, choose this
             if(max._1 > y) {
@@ -240,10 +232,10 @@ public class GLaDOS implements IGameLogic {
         }
         gameBoard = new LongBoard(x, y);
         if (x == 7 && y == 6){
-            H = new Threats();
+            H = new MovesToWin();
             initKnowledge();
         } else {
-            H = new Threats();
+            H = new MovesToWin();
         }
     }
 
@@ -520,7 +512,7 @@ public class GLaDOS implements IGameLogic {
             // Find the value at the board and store its coordinates if it belongs to a player
             int value = board[startX][startY];
             if (value != 0) {
-                Tuple<Integer, Integer> next = new Tuple<Integer, Integer>(startX, startY);
+                Tuple<Integer, Integer> next = new Tuple<>(startX, startY);
                 if (value == playerID) {
                     list._1.add(next);
                 } else {
@@ -559,7 +551,6 @@ public class GLaDOS implements IGameLogic {
 
         private int getMTW(List<List<Tuple<Integer, Integer>>> mTWCs) {
             int moves = 4;
-            System.out.println(mTWCs.size());
             for (List<Tuple<Integer, Integer>> list : mTWCs) {
                 int size = list.size();
                 if (4 - size < moves) moves = 4 - size;
@@ -575,11 +566,11 @@ public class GLaDOS implements IGameLogic {
             int mTWP1 = getMTW(data.mTWCFP1);
             int mTWP2 = getMTW(data.mTWCFP2);
 
-            System.out.println(mTWP1 + " " + mTWP2 + " = " + (mTWP1 - mTWP2));
+            //System.out.println(mTWP1 + " " + mTWP2 + " = " + (mTWP1 - mTWP2));
 
             // Calculate and return heuristic value (between -1 and 1)
-            float h = mTWP2 - mTWP1;
-            return new Tuple<Float, MTWData>(h, data);
+            float h = (mTWP2 - mTWP1) / 4;
+            return new Tuple(h, data);
         }
 
         /**
@@ -589,9 +580,9 @@ public class GLaDOS implements IGameLogic {
             // The board for the current state
             int board[][] = new int[x][y];
             // Moves to win combinations for player 1 (mTWCFP1)
-            List<List<Tuple<Integer, Integer>>> mTWCFP1 = new ArrayList<List<Tuple<Integer, Integer>>>();
+            List<List<Tuple<Integer, Integer>>> mTWCFP1 = new ArrayList();
             // Moves to win combinations for player 2 (mTWCFP2)
-            List<List<Tuple<Integer, Integer>>> mTWCFP2 = new ArrayList<List<Tuple<Integer, Integer>>>();
+            List<List<Tuple<Integer, Integer>>> mTWCFP2 = new ArrayList();
 
             int column, row, player;
 
