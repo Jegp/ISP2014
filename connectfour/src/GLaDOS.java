@@ -22,6 +22,8 @@ public class GLaDOS implements IGameLogic {
     private Heuristic H;
     // Private time variables if heuristic is running too long
     private long start, time;
+    //whether
+    private boolean boardBroken = false;
 
 
     /**
@@ -269,6 +271,13 @@ public class GLaDOS implements IGameLogic {
     }
 
     public Winner gameFinished() {
+        if (boardBroken){
+            if (playerID == 1){
+                return Winner.PLAYER1;
+            } else{
+                return Winner.PLAYER2;
+            }
+        }
         return gameFinished(gameBoard);
     }
 
@@ -680,6 +689,9 @@ public class GLaDOS implements IGameLogic {
                 TOP;    // A long with all the bytes in the top row ignited.
 
         public LongBoard(int width, int height) {
+            if (((width * height) + width) > 64) {
+                boardBroken = true;
+            }
             init(width, height);
         }
 
