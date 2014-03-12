@@ -180,7 +180,7 @@ public class GLaDOS implements IGameLogic {
         if (startDepth > 0){
             return minimax(gameBoard, startDepth);
         }
-        H = new MovesToWin();
+        H = new Threats();
         return minimax(gameBoard, 8);
     }
 
