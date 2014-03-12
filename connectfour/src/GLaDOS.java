@@ -182,7 +182,7 @@ public class GLaDOS implements IGameLogic {
         	startDepth = startDepth -2;
             return value;
         }
-        H = new MovesToWin();
+        H = new Threats();
         return minimax(gameBoard, 8);
     }
 
