@@ -178,9 +178,11 @@ public class GLaDOS implements IGameLogic {
     public int knowledgeSearch() {
         hasReachedMaxDepth = true;
         if (startDepth > 0){
-            return minimax(gameBoard, startDepth);
+        	int value = minimax(gameBoard, startDepth);
+        	startDepth = startDepth -2;
+            return value;
         }
-        H = new MovesToWin();
+        H = new Threats();
         return minimax(gameBoard, 8);
     }
 
@@ -259,7 +261,7 @@ public class GLaDOS implements IGameLogic {
         }
         gameBoard = new LongBoard(x, y);
         if (x == 7 && y == 6){
-            H = new MovesToWin();
+            H = new baseLookUp();
             initKnowledge();
         } else {
             H = new MovesToWin();
@@ -305,9 +307,14 @@ public class GLaDOS implements IGameLogic {
         public HeuristicData moveHeuristic(HeuristicData blah, int blah1, int blah2) {return null;}
         public Tuple<Float, HeuristicData> h(LongBoard board, HeuristicData data) {
             Float ret = knowledgeBase.get(board.toString());
+            System.err.println(board.toString());
             if (ret == null){
                 ret = 0f;
+                System.err.println("Miss");
+            } else {
+            	System.err.println("HIT");
             }
+            
             ret = playerID == 1 ? ret : -ret;
 
             return new Tuple<Float, HeuristicData>(ret, null);
@@ -727,6 +734,29 @@ public class GLaDOS implements IGameLogic {
         private int getBit(long l, int n){
             return (int)((l >> n) & 1L);
         }
+        @Override
+        public String toString() {
+            StringBuffer sBuff = new StringBuffer();
+            for (int i=0; i < SIZE1; i++){
+                if ((i+1)%(H1) == 0) continue;
+                int oppBoard = getBit(boards[opponentID -1], i);
+                int playBoard = getBit(boards[playerID -1], i);
+                String slotState ="";
+                if (oppBoard == 1) {
+                    slotState = "o";
+                } else if (playBoard == 1) {
+                    slotState = "x";
+                } else {
+                    slotState = "b";
+                }
+
+                sBuff.append(slotState);
+                if (i < SIZE1 -2){
+                   sBuff.append(",");
+                }
+            }
+            return sBuff.toString();
+        }
 
     }
 
@@ -738,6 +768,7 @@ public class GLaDOS implements IGameLogic {
             String line;
             while ((line = br.readLine()) != null){
                 int commaIdx = line.lastIndexOf(",");
+                System.out.println(line.substring(0, commaIdx));
                 knowledgeBase.put(line.substring(0, commaIdx), Float.parseFloat(line.substring(commaIdx + 1)));
             }
             br.close();

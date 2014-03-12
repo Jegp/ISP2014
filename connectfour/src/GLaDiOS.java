@@ -180,7 +180,7 @@ public class GLaDiOS implements IGameLogic {
         if (startDepth > 0){
             return minimax(gameBoard, startDepth);
         }
-        H = new Threats();
+        H = new MovesToWin();
         return minimax(gameBoard, 8);
     }
 
@@ -262,7 +262,7 @@ public class GLaDiOS implements IGameLogic {
             H = new baseLookUp();
             initKnowledge();
         } else {
-            H = new Threats();
+            H = new MovesToWin();
         }
     }
 
