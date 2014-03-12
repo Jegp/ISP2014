@@ -315,7 +315,7 @@ public class GLaDOS implements IGameLogic {
             	System.err.println("HIT");
             }
             
-            ret = playerID == 1 ? -ret : ret;
+            ret = playerID == 1 ? ret : -ret;
 
             return new Tuple<Float, HeuristicData>(ret, null);
         }
