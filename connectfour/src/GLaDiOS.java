@@ -4,7 +4,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 
-
 /**
  * The cake is a lie. Awesome quote from exercise description: 'Finally, it is
  * not recommended to write all the code in a single class e class.'
@@ -21,6 +20,8 @@ public class GLaDiOS implements IGameLogic {
     //for search in knowledge base
     private int startDepth = 11;
     private Heuristic H;
+    // Private time variables if heuristic is running too long
+    private long start, time;
 
 
     /**
@@ -76,17 +77,17 @@ public class GLaDiOS implements IGameLogic {
                                             float beta, int action, int depth) {
         Winner win = gameFinished(state);
         statesChecked++;
-        Tuple<Float, HeuristicData> y = new Tuple<Float, HeuristicData>((float) Integer.MIN_VALUE, null);
+        Tuple<Float, HeuristicData> y = new Tuple<>((float) Integer.MIN_VALUE, null);
 
         if(win != Winner.NOT_FINISHED) {
         	float value = utility(win);
         	cache.put(state.toString(), value);
-        	return new Tuple<Float, HeuristicData>(value, null);
+        	return new Tuple<>(value, null);
         }
 
         if(cache.get(state.toString()) != null) {
         	cacheHits++;
-			return new Tuple<Float, HeuristicData>(cache.get(state.toString()),null);
+			return new Tuple<>(cache.get(state.toString()),null);
 		}
         if(depth == 0) {
             hasReachedMaxDepth = true;
@@ -97,6 +98,8 @@ public class GLaDiOS implements IGameLogic {
         }
 
         for (int newaction : generateActions(state)) {
+            // Stop if time's up
+            if (isTimeUp()) break;
             HeuristicData newData = H.moveHeuristic(data, newaction, opponentID);
             Tuple<Float, HeuristicData> min = min(result(state, newaction), newData, alpha, beta,newaction, depth - 1);
             if (min._1 > y._1) {
@@ -119,25 +122,25 @@ public class GLaDiOS implements IGameLogic {
     private Tuple<Float, HeuristicData> min(LongBoard state, HeuristicData data, float alpha,
                                             float beta, int action, int depth) {
         statesChecked++;
-        Tuple<Float, HeuristicData> y = new Tuple<Float, HeuristicData>((float) Integer.MAX_VALUE, data);
+        Tuple<Float, HeuristicData> y = new Tuple<>((float) Integer.MAX_VALUE, data);
 
         Winner win = gameFinished(state);
 
         if(cache.get(state.toString()) != null) {
         	
         	cacheHits++;
-        	return new Tuple<Float, HeuristicData>(cache.get(state.toString()),null);
+        	return new Tuple<>(cache.get(state.toString()),null);
         }
         // If the state is a finished state
         if (win != Winner.NOT_FINISHED) {
         	float value = utility(win);
         	cache.put(state.toString(), value);
-            return new Tuple<Float, HeuristicData>(value, null);
+            return new Tuple<>(value, null);
         }
         
         if(cache.get(state.toString()) != null) {
         	cacheHits++;
-			return new Tuple<Float, HeuristicData>(cache.get(state.toString()),null);
+			return new Tuple<>(cache.get(state.toString()),null);
 		}
         
         if (depth == 0) {
@@ -148,6 +151,8 @@ public class GLaDiOS implements IGameLogic {
             return value;
         }
         for (int newaction : generateActions(state)) {
+            // Stop if time's up
+            if (isTimeUp()) break;
             HeuristicData newData = H.moveHeuristic(data, action, playerID);
             Tuple<Float, HeuristicData> max = max(
                     result(state, newaction), newData, alpha, beta, newaction, depth - 1
@@ -183,12 +188,24 @@ public class GLaDiOS implements IGameLogic {
         hasReachedMaxDepth = true;
         // TODO stop if we find a sure win util = 1;
         // TODO make stop after x sec. maybe with an exception
+        start = System.currentTimeMillis();
 
-        while (i < 11 && hasReachedMaxDepth) {
+        while (i < 20 && hasReachedMaxDepth) {
             System.out.println("depth: " + i);
-            move = minimax(gameBoard, ++i);
+            int newMove = minimax(gameBoard, ++i);
+            // BRÆJK! if time's up
+            if (!isTimeUp()) {
+                move = newMove;
+            } else {
+                break;
+            }
         }
         return move;
+    }
+
+    private boolean isTimeUp() {
+        time = System.currentTimeMillis();
+        return (time - start > 10000);
     }
 
     private int minimax(LongBoard state, int depth) {
@@ -196,7 +213,7 @@ public class GLaDiOS implements IGameLogic {
         cutoffs = 0;
         statesChecked = 0;
         cacheHits = 0;
-        cache = new HashMap<String, Float>();
+        cache = new HashMap<>();
         hasReachedMaxDepth = false;
         float y = Integer.MIN_VALUE;
  
@@ -284,7 +301,7 @@ public class GLaDiOS implements IGameLogic {
         public HeuristicData createHeuristic() { return null; }
         public HeuristicData moveHeuristic(HeuristicData data, int column, int p) { return null; }
         public Tuple<Float, HeuristicData> h(LongBoard board, HeuristicData data) {
-            return new Tuple<Float, HeuristicData>(0f, null);
+            return new Tuple<>(0f, null);
         }
     }
     
@@ -294,7 +311,7 @@ public class GLaDiOS implements IGameLogic {
         public HeuristicData moveHeuristic(HeuristicData data, int column, int p) { return null; }
 
 		public Tuple<Float, HeuristicData> h(LongBoard state, HeuristicData data) {
-			int player = -1;
+			int player;
 			Set<Integer> AEVEN = new TreeSet<>();
 			Set<Integer> AODD = new TreeSet<>();
 			Set<Integer> BEVEN = new TreeSet<>();
@@ -405,7 +422,7 @@ public class GLaDiOS implements IGameLogic {
 				System.err.println(set);
 			}*/
 		 
-		 int neg = 0;
+		 int neg;
 		 if(playerID == 1) {
 			 neg = 1;
 		 } else {
@@ -416,7 +433,7 @@ public class GLaDiOS implements IGameLogic {
 			int col = pos/state.HEIGHT;
 			if(!ThreatsBelow(col, pos, BEVEN) && !ThreatsInOtherColums(col,BODD)) {
 				//WIN FOR A
-				return new Tuple<Float, HeuristicData>(0.9F*neg,null);
+				return new Tuple<>(0.9F*neg,null);
 			}
 		 }
 		 int count = 0;
@@ -427,14 +444,14 @@ public class GLaDiOS implements IGameLogic {
 				}
 			 }
 		 if(count > BODD.size() && BEVEN.size() == 0) {
-			 return new Tuple<Float, HeuristicData>(0.9F * neg,null);
+			 return new Tuple<>(0.9F * neg,null);
 		 }
 		 
 		 if(BEVEN.size() > 0) {
-			 return new Tuple<Float, HeuristicData>(-0.9F *neg,null);
+			 return new Tuple<>(-0.9F *neg,null);
 		 }
 				
-		 return new Tuple<Float, HeuristicData>(0F,null);
+		 return new Tuple<>(0F,null);
 		}
     	
 		public boolean ThreatsBelow(int col,int pos,Set<Integer> haystack) {
@@ -574,11 +591,9 @@ public class GLaDiOS implements IGameLogic {
             int mTWP1 = getMTW(data.mTWCFP1);
             int mTWP2 = getMTW(data.mTWCFP2);
 
-            //System.out.println(mTWP1 + " " + mTWP2 + " = " + (mTWP1 - mTWP2));
-
             // Calculate and return heuristic value (between -1 and 1)
-            float h = (mTWP2 - mTWP1) / 4;
-            return new Tuple(h, data);
+            float h = (mTWP1 - (mTWP2 * 1.2f)) / 5;
+            return new Tuple<>(h, data);
         }
 
         /**
@@ -588,9 +603,9 @@ public class GLaDiOS implements IGameLogic {
             // The board for the current state
             int board[][] = new int[x][y];
             // Moves to win combinations for player 1 (mTWCFP1)
-            List<List<Tuple<Integer, Integer>>> mTWCFP1 = new ArrayList();
+            List<List<Tuple<Integer, Integer>>> mTWCFP1 = new ArrayList<>();
             // Moves to win combinations for player 2 (mTWCFP2)
-            List<List<Tuple<Integer, Integer>>> mTWCFP2 = new ArrayList();
+            List<List<Tuple<Integer, Integer>>> mTWCFP2 = new ArrayList<>();
 
             int column, row, player;
 
@@ -696,12 +711,12 @@ public class GLaDiOS implements IGameLogic {
         
         @Override
         public String toString() {
-            StringBuffer sBuff = new StringBuffer();
+            StringBuilder sBuff = new StringBuilder();
             for (int i=0; i < SIZE1; i++){
                 if ((i+1)%(H1) == 0) continue;
                 int oppBoard = getBit(boards[opponentID -1], i);
                 int playBoard = getBit(boards[playerID -1], i);
-                String slotState ="";
+                String slotState = "";
                 if (oppBoard == 1) {
                     slotState = "o";
                 } else if (playBoard == 1) {
@@ -732,7 +747,7 @@ public class GLaDiOS implements IGameLogic {
 
     //initialize knowledge base from file
     private void initKnowledge(){
-        knowledgeBase = new HashMap<String, Float>();
+        knowledgeBase = new HashMap<>();
         try {
             BufferedReader br = new BufferedReader(new FileReader("connect-4.data"));
             String line;
@@ -746,7 +761,6 @@ public class GLaDiOS implements IGameLogic {
         } catch (IOException e) {
             throw new RuntimeException("Some IO went wrong me thinks");
         }
-        System.out.println("lars");
     }
 }
 // vim: set ts=4 sw=4 expandtab:
