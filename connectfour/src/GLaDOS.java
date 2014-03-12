@@ -9,8 +9,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.omg.CORBA.portable.ValueBase;
-
 /**
  * The cake is a lie. Awesome quote from exercise description: 'Finally, it is
  * not recommended to write all the code in a single class e class.'
@@ -25,7 +23,7 @@ public class GLaDOS implements IGameLogic {
     private int statesChecked = 0, cutoffs = 0,cacheHits = 0;;
     private boolean hasReachedMaxDepth;
     //for search in knowledge base
-    private int startDepth = 13;
+    private int startDepth = 11;
     private Heuristic H;
 
 
@@ -84,15 +82,17 @@ public class GLaDOS implements IGameLogic {
         statesChecked++;
         Tuple<Float, HeuristicData> y = new Tuple<Float, HeuristicData>((float) Integer.MIN_VALUE, null);
         
+        
+        if(cache.get(state.toString()) != null) {
+        	cacheHits++;
+        	
+    		return new Tuple<Float, HeuristicData>(cache.get(state.toString()),null);
+    	}
         if(win != Winner.NOT_FINISHED) {
         	float value = utility(win);
         	cache.put(state.toString(), value);
         	return new Tuple<Float, HeuristicData>(value, null);
         }
-        if(cache.get(state.toString()) != null) {
-        	cacheHits++;
-			return new Tuple<Float, HeuristicData>(cache.get(state.toString()),null);
-		}
         if(depth == 0) {
             hasReachedMaxDepth = true;
             HeuristicData newData = H.moveHeuristic(data, action, opponentID);
@@ -100,6 +100,10 @@ public class GLaDOS implements IGameLogic {
             cache.put(state.toString(), value._1);
             return value;
         }
+
+
+
+
 
 
         for (int newaction : generateActions(state)) {
@@ -129,18 +133,18 @@ public class GLaDOS implements IGameLogic {
 
         Winner win = gameFinished(state);
 
+        if(cache.get(state.toString()) != null) {
+        	
+        	cacheHits++;
+        	return new Tuple<Float, HeuristicData>(cache.get(state.toString()),null);
+        }
         // If the state is a finished state
         if (win != Winner.NOT_FINISHED) {
         	float value = utility(win);
         	cache.put(state.toString(), value);
             return new Tuple<Float, HeuristicData>(value, null);
         }
-        
-        if(cache.get(state.toString()) != null) {
-        	cacheHits++;
-			return new Tuple<Float, HeuristicData>(cache.get(state.toString()),null);
-		}
-        
+
         if (depth == 0) {
             hasReachedMaxDepth = true;
             HeuristicData newData = H.moveHeuristic(data, action, playerID);
@@ -148,6 +152,13 @@ public class GLaDOS implements IGameLogic {
             cache.put(state.toString(), value._1);
             return value;
         }
+        
+
+
+	
+
+        
+
 
         for (int newaction : generateActions(state)) {
             HeuristicData newData = H.moveHeuristic(data, action, playerID);
@@ -185,8 +196,9 @@ public class GLaDOS implements IGameLogic {
         hasReachedMaxDepth = true;
         // TODO stop if we find a sure win util = 1;
         // TODO make stop after x sec. maybe with an exception
-        while (i < 14 && hasReachedMaxDepth) {
-            System.out.println("depth: " + i);
+        long msecs = System.currentTimeMillis();
+        while (i < 46 && hasReachedMaxDepth && (msecs+10000 >= System.currentTimeMillis())) {
+            System.out.println("depth: " + (i+1));
             move = minimax(gameBoard, ++i);
         }
         return move;
@@ -214,6 +226,7 @@ public class GLaDOS implements IGameLogic {
             }
 
         }
+        System.out.println("Turn: " + (state.player+2));
         System.out.println("States: " + statesChecked);
         System.out.println("Cutoffs; "+ cutoffs);
         System.out.println("CacheHits; "+ cacheHits);
