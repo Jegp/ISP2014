@@ -30,9 +30,9 @@ traversing the entire tree, the iterative deepening ensures an evenly
 distributed heuristic in contrast to a depth-first approach.
 
 \subsubsection*{Cache}
-We have implemented a cache to store already explored boards. This is done to ensure that 
-two equal boards does not get calculated twice. Furthermore we also mirrored the 
-board states to shrink the search space.
+We have implemented a cache to store states that have been explored previously.
+Adding a state to the cache also adds it's mirrored state to the cache,
+decreasing the number of visited nodes further.
 
 \subsubsection*{Stalling and Quick win}
 When our AI reaches the bottom of our search it can sure tell if its going to lose or win. 
