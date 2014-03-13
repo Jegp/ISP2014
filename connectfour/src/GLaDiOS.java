@@ -77,15 +77,15 @@ public class GLaDiOS implements IGameLogic {
         return H.h(board, data);
     }
 
-    private float utility(Winner win){
+    private float utility(Winner win, int depth){
         if (win == Winner.TIE) {
             return 0.0f;
         } else if (win.ordinal() == playerID -1) {
-            return 1.0f;
+            return 1.0f + depth * 0.00001f;
         } else if (win == Winner.NOT_FINISHED) {
             throw new IllegalArgumentException("Faggot");
         } else {
-           return -1.0f;
+           return -1.0f - depth * 0.00001f;
         }
     }
 
@@ -96,7 +96,7 @@ public class GLaDiOS implements IGameLogic {
         Tuple<Float, HeuristicData> y = new Tuple<>((float) Integer.MIN_VALUE, null);
 
         if(win != Winner.NOT_FINISHED) {
-        	float value = utility(win);
+        	float value = utility(win, depth);
         	cache.put(state.toString(), value);
         	return new Tuple<>(value, null);
         }
@@ -149,7 +149,7 @@ public class GLaDiOS implements IGameLogic {
         }
         // If the state is a finished state
         if (win != Winner.NOT_FINISHED) {
-        	float value = utility(win);
+        	float value = utility(win, depth);
         	cache.put(state.toString(), value);
             return new Tuple<>(value, null);
         }
