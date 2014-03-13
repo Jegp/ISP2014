@@ -70,26 +70,35 @@ In the following player A is the player who plays the first coin
 \subsection*{Moves to win}
 The moves-to-win (MTW) heuristic is based on calculating the number of moves required to 
 secure a win. Every time a move is made the heuristic calculates all the possible 
-combinations to win a game. First it removes any MTW combinations from the opponent
-the new coin was a part of (that MTW is now no longer available) and second it finds 
-the combination where there is \texttt{a)} space enough for a possible win and 
-\texttt{b)} fewest coins required to win in comparison to others.
+combinations to win a game and returns a weight, which is higher (better) the fewer
+moves are required to win. 
+
+It uses a recursive data structure which is updated whenever a move is made by first it 
+removing any MTW combinations from the opponent which included the new move (that MTW is 
+now no longer available). Second the algorithm finds and stores the combinations where 
+there space enough for a possible win.
+This way of caching gives a time advantage because the heuristic only has to calculate new MTW 
+combinations for one coin at the time, and not the entire board after each move.
 
 These MTW values are updated for both players, but a sligthly larger weight is put on the 
 MTW value of the opponent to make sure that an immediate win from the \texttt{max} player 
 is given the same weight as an immediate win from the \texttt{min} player. Since the values 
-are calculated immediately after the \texttt{max} players turn, the next move cannot be 
-made before \texttt{min} moves, and so \texttt{max} would lose.
-
-The heuristic uses a datastructure that is passed down recursively via the 
-\texttt{minimax} algorithm, so the heuristic can cache the MTW combinations for each player.
-This gives a time advantage because the heuristic only has to calculate new MTW 
-combinations for one player at the time.
+are calculated immediately after the \texttt{max} player made her move, the next move cannot
+be made before \texttt{min} moves, and so \texttt{max} would lose.
 
 The heuristic is strong in the beginning because it tries to get as long series of coins
 as possible, while preventing the opponent to grow large MTW combinations. It is 
-relatively weak in the end-game because it fails to detect some of the challenges 
-described in the \textit{Threats} heuristic.
+relatively weak in the end-game because it fails to detect some of the late-game challenges 
+described in the \textit{Threats} heuristic. 
+
+There are a number of ways this algorithm can be improved. First of all it could be
+interesting to add some additional value to MTW combinations that is close to the bottom of
+the board or combinations where there are coins below the combination coordinates 
+(because they requires fewer plys to reach). It could also be interesting to use threads by 
+splitting the calculations into different subtrees, to get better runtimes and, in turn,
+cover a larger search space\footnote{This also applies to the \texttt{Threats} algorithm
+of course.}. There are other means of optimization and, in sum, the heuristics have a 
+number of possible improvements that could be interesting to explore in the future.
 
 \end{document}
 
