@@ -29,7 +29,7 @@ public class GLaDiOS implements IGameLogic {
      * Thanks Java.
      */
     class Tuple<T, U> {
-        final T _1; final U _2;
+        T _1; U _2;
         Tuple(T _1, U _2) { this._1 = _1; this._2 = _2; }
         @Override public boolean equals(Object that) {
             if (that instanceof Tuple) {
@@ -42,6 +42,9 @@ public class GLaDiOS implements IGameLogic {
                 return ((Integer) _1) << 4 | (Integer) _2;
             }
             return super.hashCode();
+        }
+        @Override public String toString() {
+            return "(" + _1.toString() + " -> " + _2.toString() + ")";
         }
     }
 
@@ -274,8 +277,8 @@ public class GLaDiOS implements IGameLogic {
         }
         gameBoard = new LongBoard(x, y);
         if (x == 7 && y == 6){
-            H = new MovesToWin();
-            //initKnowledge();
+            H = new baseLookUp();
+            initKnowledge();
         } else {
             H = new MovesToWin();
         }
@@ -297,7 +300,7 @@ public class GLaDiOS implements IGameLogic {
 
     public int decideNextMove() {
         start = System.currentTimeMillis();
-        return minimax(gameBoard, 5);
+        return minimax(gameBoard, 8);
     }
 
     /**
@@ -556,30 +559,60 @@ public class GLaDiOS implements IGameLogic {
             return newData;
         }
 
-        private void traceDirection(Set<Tuple<Integer, Integer>> set, int board[][], int player,
-                                    int startX, int startY, int dx, int dy) {
+        /**
+         * Traces the number of coins and free spaces (tupled) in the given direction.
+         */
+        private Tuple<Integer, Integer> traceDirection(Set<Tuple<Integer, Integer>> set,
+                                                       int board[][], int player,
+                                                       int startX, int startY, int dx, int dy) {
+            Tuple<Integer, Integer> res = new Tuple<>(0, 0);
             // Return if we are outside the board
-            if ((startX >= x || startX < 0) || (startY >= y || startY < 0)) return;
-            // Add the coordinate and traverse recursively
-            set.add(new Tuple<>(startX, startY));
-            traceDirection(set, board, player, startX + dx, startY + dy, dx, dy);
+            if ((startX >= x || startX < 0) || (startY >= y || startY < 0)) return res;
+            int value = board[startX][startY];
+
+            // Add the coordinate
+            if (value == player) {
+                set.add(new Tuple<>(startX, startY));
+                res._1++;
+            } else if (value == 0) {
+                res._2++;
+            }
+
+            // Traverse recursively if the other player is not in the way
+            if (value == 0 || value == player) {
+                Tuple<Integer, Integer> newRes =
+                        traceDirection(set, board, player, startX + dx, startY + dy, dx, dy);
+                res._1 += newRes._1;
+                res._2 += newRes._2;
+            }
+
+            return res;
         }
 
         private void addMTWCs(MTWData data, int x, int y, int dx, int dy) {
             // Create set of tuples with coordinates - with annoying syntax
             Set<Tuple<Integer, Integer>> set = new HashSet<Tuple<Integer, Integer>>();
             // Trace in the given direction and it's opposite direction
-            traceDirection(set, data.board, data.player,      x,       y,  dx,  dy);
-            traceDirection(set, data.board, data.player, x - dx,  y - dx, -dx, -dy);
-            // Add to heuristic data if not empty
-            if (!set.isEmpty()) {
-                if (data.player == playerID) data.mTWCFP1.add(set);
-                else                         data.mTWCFP2.add(set);
+            Tuple<Integer, Integer> first  = traceDirection(set, data.board, data.player,      x,       y,  dx,  dy);
+            Tuple<Integer, Integer> second = traceDirection(set, data.board, data.player, x - dx,  y - dx, -dx, -dy);
+            // Add to heuristic data if not empty and the WC is large enough to give a win
+            if (!set.isEmpty() && first._1 + first._2 + second._1 + second._2 > 3) {
+                int mTW = 4 - first._1 + second._1;
+
+                if (data.player == playerID) {
+                    data.mTWCFP1.add(set);
+                    if (mTW < data.mTW1) data.mTW1 = mTW;
+                }
+                else {
+                    data.mTWCFP2.add(set);
+                    if (mTW < data.mTW2) data.mTW2 = mTW;
+                }
+
             }
         }
 
         /**
-         * Removes MTWCs that are 'destroyed' by the latest move.
+         * Removes MTWCs from the opponent that are 'destroyed' by the latest move.
          */
         private void removeBrokenMTWCs(MTWData data) {
             Set<Set<Tuple<Integer, Integer>>> set;
@@ -603,6 +636,13 @@ public class GLaDiOS implements IGameLogic {
         }
 
         private void updateMTWCs(MTWData data) {
+            // Delete old MTWCs from the current player
+            if (data.player == playerID) {
+                data.mTWCFP1 = new HashSet<>();
+            } else {
+                data.mTWCFP2 = new HashSet<>();
+            }
+
             // Remove old MTWCs
             removeBrokenMTWCs(data);
 
@@ -619,22 +659,10 @@ public class GLaDiOS implements IGameLogic {
             addMTWCs(data, data.column, data.row, -1, -1);
         }
 
-        private int getMTW(Set<Set<Tuple<Integer, Integer>>> mTWCs) {
-            int moves = 4;
-            for (Set<Tuple<Integer, Integer>> list : mTWCs) {
-                int size = list.size();
-                if (4 - size < moves) moves = 4 - size;
-            }
-            return moves;
-        }
-
         public Tuple<Float, MTWData> h(LongBoard board, MTWData data) {
-            // Find the least MTW
-            int mTWP1 = getMTW(data.mTWCFP1);
-            int mTWP2 = getMTW(data.mTWCFP2);
-
+            System.out.println(data.mTW1 + " " + data.mTW2);
             // Calculate and return heuristic value (between -1 and 1)
-            float h = (mTWP1 - (mTWP2 * 1.2f)) / 5;
+            float h = (data.mTW1 - data.mTW2 * 1.2f) / 5;
             return new Tuple<>(h, data);
         }
 
@@ -649,13 +677,14 @@ public class GLaDiOS implements IGameLogic {
             // Moves to win combinations for player 2 (mTWCFP2)
             Set<Set<Tuple<Integer, Integer>>> mTWCFP2;
 
-            int column, row, player;
+            int column, row, player, mTW1, mTW2;
 
             /**
              * Creates a MTWData board with no initial coins set.
              */
             MTWData() {
                 mTWCFP1 = new HashSet<>(); mTWCFP2 = new HashSet<>();
+                mTW1 = 4; mTW2 = 4;
             }
 
             /**
@@ -667,6 +696,8 @@ public class GLaDiOS implements IGameLogic {
                 }
                 this.mTWCFP1 = new HashSet<>(old.mTWCFP1);
                 this.mTWCFP2 = new HashSet<>(old.mTWCFP2);
+                this.mTW1 = old.mTW1;
+                this.mTW2 = old.mTW2;
             }
 
             /**
