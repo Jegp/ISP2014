@@ -96,7 +96,6 @@ public class GLaDOS implements IGameLogic {
             cache.put(state.toString(), value._1);
             return value;
         }
-
         for (int newaction : generateActions(state)) {
             // Stop if time's up
             if (isTimeUp()) break;
@@ -126,11 +125,6 @@ public class GLaDOS implements IGameLogic {
 
         Winner win = gameFinished(state);
 
-        if(cache.get(state.toString()) != null) {
-
-            cacheHits++;
-            return new Tuple<>(cache.get(state.toString()),null);
-        }
         // If the state is a finished state
         if (win != Winner.NOT_FINISHED) {
             float value = utility(win);
@@ -178,12 +172,10 @@ public class GLaDOS implements IGameLogic {
     public int knowledgeSearch() {
         hasReachedMaxDepth = true;
         if (startDepth > 0){
-        	int value = minimax(gameBoard, startDepth);
-        	startDepth = startDepth -2;
-            return value;
+            return minimax(gameBoard, startDepth);
         }
         H = new Threats();
-        return minimax(gameBoard, 8);
+        return iterativeSearch();
     }
 
     // Iterative
@@ -194,13 +186,14 @@ public class GLaDOS implements IGameLogic {
         // TODO stop if we find a sure win util = 1;
         // TODO make stop after x sec. maybe with an exception
 
-        while (i < 20 && hasReachedMaxDepth) {
+        while (i < 46 && hasReachedMaxDepth) {
             System.out.println("depth: " + i);
             int newMove = minimax(gameBoard, ++i);
             // BRÆJK! if time's up
             if (!isTimeUp()) {
                 move = newMove;
             } else {
+            	System.out.println("TIMEUP");
                 break;
             }
         }
@@ -279,7 +272,9 @@ public class GLaDOS implements IGameLogic {
     }
 
     public void insertCoin(int column, int playerID) {
+    	
         gameBoard.move(column);
+        startDepth--;
     }
 
     public int decideNextMove() {
@@ -307,10 +302,10 @@ public class GLaDOS implements IGameLogic {
         public HeuristicData moveHeuristic(HeuristicData blah, int blah1, int blah2) {return null;}
         public Tuple<Float, HeuristicData> h(LongBoard board, HeuristicData data) {
             Float ret = knowledgeBase.get(board.toString());
-            System.err.println(board.toString());
+            
             if (ret == null){
-                ret = 0f;
-                System.err.println("Miss");
+                ret = -0f;
+                
             } else {
             	System.err.println("HIT");
             }
