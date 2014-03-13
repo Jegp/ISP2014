@@ -35,13 +35,14 @@ Adding a state to the cache also adds it's mirrored state to the cache,
 decreasing the number of visited nodes further.
 
 \subsubsection*{Stalling and Quick win}
-When our AI reaches the bottom of our search it can sure tell if its going to lose or win. 
-But this is only against a optimal player. So even though the AI knows it has lost, it 
-makes moves that will make the game as long as possible to make room for the suboptimal 
-opponents to make mistakes. The same mechanism\footnote{The implementation uses a trick 
-in the \texttt{utility} method, which both affects the h-values of winning and losing 
-states.} also allows for the heuristic to move
-towards winning states, just to spare the opponent of any (further) humiliation.
+When our AI reaches the bottom of our search, it can sure tell if its going to
+lose or win. But this is only against a optimal player. So even though the AI
+knows it has lost, it makes moves that will make the game as long as possible to
+make room for the suboptimal opponents to make mistakes. The same
+mechanism\footnote{The implementation uses a trick in the \texttt{utility}
+method, which both affects the h-values of winning and losing states.} also
+allows for the heuristic to move towards winning states, just to spare the
+opponent of any (further) humiliation.
 
 \section*{Heuristics}
 \subsection*{Knowledge base}
