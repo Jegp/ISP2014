@@ -193,7 +193,7 @@ public class GLaDOS implements IGameLogic {
     // knowledge!
     public int knowledgeSearch() {
         hasReachedMaxDepth = true;
-        if (startDepth <= 0) {
+        if (startDepth <= 0 || (playerID == 2 && startDepth == 1)) {
             H = new Threats();
             return iterativeSearch();
         }
@@ -281,9 +281,6 @@ public class GLaDOS implements IGameLogic {
         }
         gameBoard = new LongBoard(x, y);
         if (x == 7 && y == 6){
-        	if(playerID == 2) {
-        		startDepth = 6;
-        	}
             knowledge = true;
             H = new baseLookUp();
             initKnowledge();

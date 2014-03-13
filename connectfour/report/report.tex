@@ -15,7 +15,7 @@ numbers=left
 \begin{document}
 
 \title{Exercise Lecture 4}
-\author{Sigurt 'Slap Blære' Dinesen \\sidi@itu.dk \\\\ Hans Pagh \\hkkp@itu.dk 
+\author{Sigurt Dinesen \\sidi@itu.dk \\\\ Hans Pagh \\hkkp@itu.dk 
 \\\\Jens Egholm \\jegp@itu.dk}
 \maketitle
 \pagebreak
@@ -28,6 +28,9 @@ For searching we use iterative deepening with an incrementing depth and a timer 
 the search. Since the search can potentially be cut off before traversing the entire tree, 
 the iterative deepening ensures an evenly distributed heuristic in contrast to a depth-first
 approach.
+\subsubsection{Cache}
+
+\subsubsection{Stalling and Quick win}
 
 \section*{Heuristics}
 \subsection*{Knowledge base}
@@ -38,14 +41,17 @@ The Threats heuristic evaluates the state of a board based on the number of thre
 A threat is defined as position where ether player can win the game, which simply means a position
 where ether plays have 3 connected coins and an open position to put the last coin. 
 The threats are then further categories into even and odd threats, based on that row they where found in.
- 
-All the threats are then evaluated based on the following rules
+By analysing these threats we can force the opponent to play moves in the late game, that makes the AI win.
+An example of this is when there is only one column left, the opponent is forced to play in this column, 
+earlier in the game the AI made to sure to make a threat in this column so it will win in this scenario. 
+By investigating strategies and tactics online we found the following rules to evaluate the threats on the board.
+In the following player A is the player how plays the first coin
 \begin{itemize} 
-	\item 
-	\item
-	\item
+	\item If player A had a on odd threat and player B had no even threats below this in the same column and player B had no odd threats anywhere else, it was a win for A
+	\item If player A had a greater number of odd threats than player B had odd threats and player B had no even threats, it was a win for A	
+	\item If nether of these was true and player B had any even threats it was win for B
+	\item Else is was a draw state.
 \end{itemize} 
-By following these rules the AI, will try to force the opponent into playing a move, which will make the AI win. 
 
 \subsection*{Moves to win}
 The moves-to-win (MTW) heuristic is based on calculating the number of moves required to 
