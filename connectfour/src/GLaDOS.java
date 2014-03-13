@@ -317,13 +317,14 @@ public class GLaDOS implements IGameLogic {
             Float ret = knowledgeBase.get(board.toString());
             System.err.println(board.toString());
             if (ret == null){
-                ret = 0f;
                 System.err.println("Miss");
+                ret = playerID == 2 ? 1f : -1f;
+                return new Tuple<Float, HeuristicData>(0f, null);
             } else {
             	System.err.println("HIT");
             }
-            
-            ret = playerID == 1 ? ret : -ret;
+
+            ret = playerID == 2 ? -ret : ret;
 
             return new Tuple<Float, HeuristicData>(ret, null);
         }
@@ -750,12 +751,12 @@ public class GLaDOS implements IGameLogic {
             StringBuffer sBuff = new StringBuffer();
             for (int i=0; i < SIZE1; i++){
                 if ((i+1)%(H1) == 0) continue;
-                int oppBoard = getBit(boards[opponentID -1], i);
-                int playBoard = getBit(boards[playerID -1], i);
+                int firstBoard = getBit(boards[0], i);
+                int secondBoard = getBit(boards[1], i);
                 String slotState ="";
-                if (oppBoard == 1) {
+                if (secondBoard == 1) {
                     slotState = "o";
-                } else if (playBoard == 1) {
+                } else if (firstBoard == 1) {
                     slotState = "x";
                 } else {
                     slotState = "b";
