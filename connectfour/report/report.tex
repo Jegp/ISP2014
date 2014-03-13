@@ -22,20 +22,25 @@ numbers=left
 
 \section*{Evaluation}
 \subsection*{Minimax}
-For evaluating the heuristics we use the minimax algorithm with alpha-beta pruning to
-search for the heuristics with maximum utility and minimum utility recursively. 
-For searching we use iterative deepening with an incrementing depth and a timer to cut off
-the search. Since the search can potentially be cut off before traversing the entire tree, 
-the iterative deepening ensures an evenly distributed heuristic in contrast to a depth-first
-approach.
+The core algorithm used is minimax, with $\alpha/\beta$ pruning and caching.  To
+comply with the assignment constraint of spending no more than 10 seconds to
+decide a move, we use iterative deepening with an incrementing depth and a timer
+to cut off the search. Since the search can potentially be cut off before
+traversing the entire tree, the iterative deepening ensures an evenly
+distributed heuristic in contrast to a depth-first approach.
+
 \subsubsection*{Cache}
-We have implemented a cache to store all ready explored boards. This is to ensure that two equal boards does not get calculated twice.
-Further more we also included mirrored board state, since these have the same value as there mirror
+We have implemented a cache to store all ready explored boards. This is to
+ensure that two equal boards does not get calculated twice. Further more we also
+included mirrored board state, since these have the same value as there mirror
 
 \subsubsection*{Stalling and Quick win}
-When our AI reach the bottom of our search it can for sure tell if its going to lose or win. But this is only against a optimal player.
-So even though the AI knows it has lost it makes moves that that will make the game as long as possible to make room for the opponent to make mistakes.
-Opposite of this it makes sure to win as fast as it can just to spare the opponent of any humiliation.
+When our AI reach the bottom of our search it can for sure tell if its going to
+lose or win. But this is only against a optimal player. So even though the AI
+knows it has lost it makes moves that that will make the game as long as
+possible to make room for the opponent to make mistakes. Opposite of this it
+makes sure to win as fast as it can just to spare the opponent of any
+humiliation.
 
 \section*{Heuristics}
 \subsection*{Knowledge base}
