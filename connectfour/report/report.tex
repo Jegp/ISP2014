@@ -76,7 +76,7 @@ secure a win. Every time a move is made the heuristic calculates all the possibl
 combinations to win a game and returns a weight, which is higher (better) the fewer
 moves are required to win. 
 
-It uses a recursive data structure which is updated whenever a move is made by first it 
+It uses a data structure which is updated whenever a move is made by first 
 removing any MTW combinations from the opponent which included the new move (that MTW is 
 now no longer available). Second the algorithm finds and stores the combinations where 
 there space enough for a possible win.
