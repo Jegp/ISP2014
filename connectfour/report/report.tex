@@ -97,8 +97,9 @@ described in the \textit{Threats} heuristic.
 There are a number of ways this algorithm can be improved. First of all it could be
 interesting to add some additional value to MTW combinations that is close to the bottom of
 the board or combinations where there are coins below the combination coordinates 
-(because they requires fewer plys to reach). It could also be interesting to use threads by 
-splitting the calculations into different subtrees, to get better runtimes and, in turn,
+(because they require fewer plys to reach). It could also be interesting to take advantage
+of multithreading by splitting the calculations into different subtrees and hand them to 
+parallel processes. This would give a better runtimes and, in turn,
 cover a larger search space\footnote{This also applies to the \texttt{Threats} algorithm
 of course.}. There are other means of optimization and, in sum, the heuristics have a 
 number of possible improvements that could be interesting to explore in the future.
