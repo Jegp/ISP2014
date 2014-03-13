@@ -22,7 +22,7 @@ numbers=left
 
 \section*{Evaluation}
 \subsection*{Minimax}
-The core algorithm used is minimax, with $\alpha/\beta$ pruning and caching.  To
+The core algorithm used is minimax, with $\alpha/\beta$ pruning and caching. To
 comply with the assignment constraint of spending no more than 10 seconds to
 decide a move, we use iterative deepening with an incrementing depth and a timer
 to cut off the search. Since the search can potentially be cut off before
@@ -48,16 +48,17 @@ towards winning states, just to spare the opponent of any (further) humiliation.
 \input{knowledge}
 
 \subsection*{Threats}
-The Threats heuristic evaluates the state of a board based on the number of threats on 
-the board. 
-A threat is defined as position where either player can win the game, which simply means a 
-position where either plays have 3 connected coins and an open position to put the last coin. 
-The threats are then further categorized into even and odd threats, based on the row they 
-where found in. By analysing these threats we can force the opponent to play moves in the 
-late game, that makes the AI win. An example of this is when there is only one column left, 
-the opponent is forced to play in this column, earlier in the game the AI made sure to make a 
-threat in this column so it will win in this scenario. By investigating strategies and tactics 
-online we found the following rules to evaluate the threats on the board.
+The Threats heuristic evaluates the state of a board based on the number of
+threats on the board. A threat is defined as position where either player can
+win the game, which simply means a position where either plays have 3 connected
+coins and an open position to put the last coin. The threats are then further
+categorized into even and odd threats, based on the row they where found in. By
+analysing these threats we can force the opponent to play moves in the late
+game, that makes the AI win. An example of this is when there is only one column
+left, the opponent is forced to play in this column, earlier in the game the AI
+made sure to make a threat in this column so it will win in this scenario. By
+investigating strategies and tactics online we found the following rules to
+evaluate the threats on the board.
 \footnote{http://asingleneuron.com/2012/08/04/connect-four/}
 
 In the following player A is the player who plays the first coin
