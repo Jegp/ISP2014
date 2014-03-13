@@ -211,13 +211,13 @@ public class GLaDOS implements IGameLogic {
 
         while (i < x * y && hasReachedMaxDepth) {
 
-            System.out.println("depth: " + i);
+            //System.out.println("depth: " + i);
             int newMove = minimax(gameBoard, ++i);
             // stahp if time's up (in the name of love!)
             if (!isTimeUp()) {
                 move = newMove;
             } else {
-            	System.out.println("TIMEUP");
+            	//System.out.println("TIMEUP");
                 break;
             }
         }
@@ -252,15 +252,15 @@ public class GLaDOS implements IGameLogic {
                 y = max._1;
             }
 
-            System.out.println(action +" : " + max._1);
+            //System.out.println(action +" : " + max._1);
         }
-        System.out.println("Turn: " + (state.player+2));
-        System.out.println("States: " + statesChecked);
-        System.out.println("Cutoffs; "+ cutoffs);
-        System.out.println("CacheHits; "+ cacheHits);
-        System.out.println("H - value: " + y);
-        System.out.println("Move: " + bestAction);
-        System.out.println();
+        //System.out.println("Turn: " + (state.player+2));
+        //System.out.println("States: " + statesChecked);
+        //System.out.println("Cutoffs; "+ cutoffs);
+        //System.out.println("CacheHits; "+ cacheHits);
+        //System.out.println("H - value: " + y);
+        //System.out.println("Move: " + bestAction);
+        //System.out.println();
         return bestAction;
     }
 
