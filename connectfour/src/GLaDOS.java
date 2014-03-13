@@ -8,7 +8,7 @@ import java.util.*;
  * The cake is a lie. Awesome quote from exercise description: 'Finally, it is
  * not recommended to write all the code in a single class e class.'
  */
-public class GLaDiOS implements IGameLogic {
+public class GLaDOS implements IGameLogic {
     private HashMap<String, Float> knowledgeBase;
     private int x = 0, y = 0;
     private int playerID;
