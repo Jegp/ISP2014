@@ -15,22 +15,28 @@ numbers=left
 \begin{document}
 
 \title{Exercise Lecture 4}
-\author{Sigurt 'Slap Blære' Dinesen \\sidi{@}itu.dk \\\\ Hans Pagh \\hkkp@itu.dk \\\\Jens
-Egholm \\jegp@itu.dk}
+\author{Sigurt 'Slap Blære' Dinesen \\sidi@itu.dk \\\\ Hans Pagh \\hkkp@itu.dk 
+\\\\Jens Egholm \\jegp@itu.dk}
 \maketitle
-\tableofcontents
 \pagebreak
 
-\section*{Intro}
-\addcontentsline{toc}{section}{Intro}
-\subsection*{Sub intro)}
-\addcontentsline{toc}{subsection}{sub intro}
+\section*{Evaluation}
+\subsection*{Minimax}
+For evaluating the heuristics we use the minimax algorithm with alpha-beta pruning to
+search for the heuristics with maximum utility and minimum utility recursively. 
+For searching we use iterative deepening with an incrementing depth and a timer to cut off
+the search. Since the search can potentially be cut off before traversing the entire tree, 
+the iterative deepening ensures an evenly distributed heuristic in contrast to a depth-first
+approach.
 
 \section*{Heuristics}
-\addcontentsline{toc}{section}{Heuristic}
+\subsection*{Knowledge base}
+This is bullshit. By Sigurt. And Hans. Not Jens.
+
+\subsection*{Threats}
+
 
 \subsection*{Moves to win}
-\addcontentsline{toc}{subsection}{Moves to win}
 The moves-to-win (MTW) heuristic is based on calculating the number of moves required to 
 secure a win. Every time a move is made the heuristic calculates all the possible 
 combinations to win a game. First it removes any MTW combinations from the opponent
