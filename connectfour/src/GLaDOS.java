@@ -20,6 +20,7 @@ public class GLaDOS implements IGameLogic {
     //for search in knowledge base
     private int startDepth = 8;
     private Heuristic H;
+    boolean knowledge = false;
     // Private time variables if heuristic is running too long
     private long start, time;
     //whether
@@ -97,22 +98,24 @@ public class GLaDOS implements IGameLogic {
         statesChecked++;
         Tuple<Float, HeuristicData> y = new Tuple<>((float) Integer.MIN_VALUE, null);
 
+        Float cached = cacheGet(state);
+        if (null != cached) {
+            return new Tuple<>(cached,null);
+        }
+
         if(win != Winner.NOT_FINISHED) {
             float value = utility(win, depth);
-            cache.put(state.toString(), value);
+            cache(state, value);
             return new Tuple<>(value, null);
         }
 
-        if (cache.get(state.toString()) != null) {
-            cacheHits++;
-            return new Tuple<>(cache.get(state.toString()),null);
-        }
 
-        	if (depth == 0) {
+        if (depth == 0) {
+
             hasReachedMaxDepth = true;
             HeuristicData newData = H.moveHeuristic(data, action, opponentID);
             Tuple<Float, HeuristicData> value = h(state, newData);
-            cache.put(state.toString(), value._1);
+            cache(state, value._1);
             return value;
         }
         for (int newaction : generateActions(state)) {
@@ -126,14 +129,14 @@ public class GLaDOS implements IGameLogic {
             // tests for possible beta cut
             if (y._1 >= beta) {
                 cutoffs++;
-                cache.put(state.toString(), y._1);
+                cache(state, y._1);
                 return y;
             }
 
             alpha = Math.max(alpha, y._1);
 
         }
-        cache.put(state.toString(), y._1);
+        cache(state, y._1);
         return y;
     }
 
@@ -144,25 +147,25 @@ public class GLaDOS implements IGameLogic {
 
         Winner win = gameFinished(state);
 
+        Float cached = cacheGet(state);
+        if(null != cached) {
+            return new Tuple<>(cached,null);
+        }
         // If the state is a finished state
         if (win != Winner.NOT_FINISHED) {
             float value = utility(win, depth);
-            cache.put(state.toString(), value);
+            cache(state, value);
             return new Tuple<>(value, null);
-        }
-
-        if(cache.get(state.toString()) != null) {
-            cacheHits++;
-            return new Tuple<>(cache.get(state.toString()),null);
         }
 
         if (depth == 0) {
             hasReachedMaxDepth = true;
             HeuristicData newData = H.moveHeuristic(data, action, playerID);
             Tuple<Float, HeuristicData> value = h(state, newData);
-            cache.put(state.toString(), value._1);
+            cache(state, value._1);
             return value;
         }
+
         for (int newaction : generateActions(state)) {
             // Stop if time's up
             if (isTimeUp()) break;
@@ -178,23 +181,23 @@ public class GLaDOS implements IGameLogic {
             // tests for possible alpha cut
             if (y._1 <= alpha) {
                 cutoffs++;
-                cache.put(state.toString(), y._1);
+                cache(state, y._1);
                 return y;
             }
             beta = Math.min(beta, y._1);
         }
-        cache.put(state.toString(), y._1);
+        cache(state, y._1);
         return y;
     }
 
     // knowledge!
     public int knowledgeSearch() {
         hasReachedMaxDepth = true;
-        if (startDepth > 0){
-            return minimax(gameBoard, startDepth);
+        if (startDepth <= 0) {
+            H = new Threats();
+            return iterativeSearch();
         }
-        H = new Threats();
-        return iterativeSearch();
+        return minimax(gameBoard, startDepth);
     }
 
     // Iterative
@@ -210,7 +213,7 @@ public class GLaDOS implements IGameLogic {
 
             System.out.println("depth: " + i);
             int newMove = minimax(gameBoard, ++i);
-            // BRÆJK! if time's up
+            // stahp if time's up (in the name of love!)
             if (!isTimeUp()) {
                 move = newMove;
             } else {
@@ -249,6 +252,7 @@ public class GLaDOS implements IGameLogic {
                 y = max._1;
             }
 
+            System.out.println(action +" : " + max._1);
         }
         System.out.println("Turn: " + (state.player+2));
         System.out.println("States: " + statesChecked);
@@ -277,10 +281,14 @@ public class GLaDOS implements IGameLogic {
         }
         gameBoard = new LongBoard(x, y);
         if (x == 7 && y == 6){
-            H = new MovesToWin();
-            //initKnowledge();
+        	if(playerID == 2) {
+        		startDepth = 6;
+        	}
+            knowledge = true;
+            H = new baseLookUp();
+            initKnowledge();
         } else {
-            H = new MovesToWin();
+            H = new Threats();
         }
     }
 
@@ -308,7 +316,11 @@ public class GLaDOS implements IGameLogic {
 
     public int decideNextMove() {
         start = System.currentTimeMillis();
-        return knowledgeSearch();
+        if (knowledge){
+            return knowledgeSearch();
+        } else {
+            return iterativeSearch();
+        }
     }
 
     /**
@@ -331,13 +343,12 @@ public class GLaDOS implements IGameLogic {
         public HeuristicData moveHeuristic(HeuristicData blah, int blah1, int blah2) {return null;}
         public Tuple<Float, HeuristicData> h(LongBoard board, HeuristicData data) {
             Float ret = knowledgeBase.get(board.toString());
-            
             if (ret == null){
-                System.err.println("Miss");
-                ret = playerID == 2 ? 1f : -1f;
-                return new Tuple<Float, HeuristicData>(0f, null);
-            } else {
-                System.err.println("HIT");
+                ret = knowledgeBase.get(board.mirrored());
+                if (ret == null){
+                    ret = playerID == 1 ? 1f : -1f;
+                    return new Tuple<Float, HeuristicData>(ret, null);
+                }
             }
 
             ret = playerID == 2 ? -ret : ret;
@@ -837,6 +848,37 @@ public class GLaDOS implements IGameLogic {
             return sBuff.toString();
         }
 
+        public String mirrored() {
+            Stack<String> stack = new Stack<String>();
+            StringBuffer sBuff = new StringBuffer();
+            for (int i=0; i < SIZE1; i++){
+                if ((i+1)%(H1) == 0) {
+                    stack.push(sBuff.toString());
+                    sBuff = new StringBuffer();
+                    continue;
+                }
+                int firstBoard = getBit(boards[0], i);
+                int secondBoard = getBit(boards[1], i);
+                String slotState ="";
+                if (secondBoard == 1) {
+                    slotState = "o";
+                } else if (firstBoard == 1) {
+                    slotState = "x";
+                } else {
+                    slotState = "b";
+                }
+
+                sBuff.append(slotState);
+                if(i != HEIGHT-1){
+                    sBuff.append(",");
+                }
+            }
+            String ret = "";
+            while(!stack.empty()){
+                ret += stack.pop();
+            }
+            return ret;
+        }
     }
 
     //initialize knowledge base from file
@@ -847,7 +889,6 @@ public class GLaDOS implements IGameLogic {
             String line;
             while ((line = br.readLine()) != null){
                 int commaIdx = line.lastIndexOf(",");
-                System.out.println(line.substring(0, commaIdx));
                 knowledgeBase.put(line.substring(0, commaIdx), Float.parseFloat(line.substring(commaIdx + 1)));
             }
             br.close();
@@ -856,6 +897,19 @@ public class GLaDOS implements IGameLogic {
         } catch (IOException e) {
             throw new RuntimeException("Some IO went wrong me thinks");
         }
+    }
+
+    private void cache(LongBoard state, Float val){
+        cache.put(state.toString(), val);
+        cache.put(state.mirrored(), val);
+    }
+
+    private Float cacheGet(LongBoard state){
+        Float ret;
+        if((ret = cache.get(state.toString())) != null) {
+            cacheHits++;
+        }
+        return ret;
     }
 }
 // vim: set ts=4 sw=4 expandtab:
