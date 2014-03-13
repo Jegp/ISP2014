@@ -180,12 +180,10 @@ public class GLaDOS implements IGameLogic {
     public int knowledgeSearch() {
         hasReachedMaxDepth = true;
         if (startDepth > 0){
-        	int value = minimax(gameBoard, startDepth);
-        	startDepth = startDepth -2;
-            return value;
+        	return minimax(gameBoard, startDepth);
         }
         H = new Threats();
-        return minimax(gameBoard, 8);
+        return iterativeSearch();
     }
 
     // Iterative
@@ -196,7 +194,7 @@ public class GLaDOS implements IGameLogic {
         // TODO stop if we find a sure win util = 1;
         // TODO make stop after x sec. maybe with an exception
 
-        while (i < 20 && hasReachedMaxDepth) {
+        while (i < x * y && hasReachedMaxDepth) {
             System.out.println("depth: " + i);
             int newMove = minimax(gameBoard, ++i);
             // BRÆJK! if time's up
@@ -266,7 +264,7 @@ public class GLaDOS implements IGameLogic {
             H = new baseLookUp();
             initKnowledge();
         } else {
-            H = new MovesToWin();
+            H = new Threats();
         }
     }
 
@@ -288,6 +286,7 @@ public class GLaDOS implements IGameLogic {
     }
 
     public void insertCoin(int column, int playerID) {
+        startDepth--;
         gameBoard.move(column);
     }
 

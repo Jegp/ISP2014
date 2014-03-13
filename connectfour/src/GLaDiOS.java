@@ -197,7 +197,7 @@ public class GLaDiOS implements IGameLogic {
             return minimax(gameBoard, startDepth);
         }
         H = new MovesToWin();
-        return minimax(gameBoard, 8);
+        return iterativeSearch();
     }
 
     // Iterative
@@ -208,7 +208,7 @@ public class GLaDiOS implements IGameLogic {
         // TODO stop if we find a sure win util = 1;
         // TODO make stop after x sec. maybe with an exception
 
-        while (i < 20 && hasReachedMaxDepth) {
+        while (i < x * y && hasReachedMaxDepth) {
             System.out.println("depth: " + i);
             int newMove = minimax(gameBoard, ++i);
             // BRÆJK! if time's up
@@ -295,12 +295,13 @@ public class GLaDiOS implements IGameLogic {
     }
     
     public void insertCoin(int column, int playerID) {
+        startDepth--;
         gameBoard.move(column);
     }
 
     public int decideNextMove() {
         start = System.currentTimeMillis();
-        return minimax(gameBoard, 8);
+        return knowledgeSearch();
     }
 
     /**
@@ -636,12 +637,15 @@ public class GLaDiOS implements IGameLogic {
         }
 
         private void updateMTWCs(MTWData data) {
-            // Delete old MTWCs from the current player
+            // Delete old MTWCs and reset the MTW for the current player
             if (data.player == playerID) {
                 data.mTWCFP1 = new HashSet<>();
+                data.mTW1    = 4;
             } else {
                 data.mTWCFP2 = new HashSet<>();
+                data.mTW2    = 4;
             }
+
 
             // Remove old MTWCs
             removeBrokenMTWCs(data);
@@ -660,9 +664,8 @@ public class GLaDiOS implements IGameLogic {
         }
 
         public Tuple<Float, MTWData> h(LongBoard board, MTWData data) {
-            System.out.println(data.mTW1 + " " + data.mTW2);
             // Calculate and return heuristic value (between -1 and 1)
-            float h = (data.mTW1 - data.mTW2 * 1.2f) / 5;
+            float h = (data.mTW1 - data.mTW2 * 1.25f) / 5;
             return new Tuple<>(h, data);
         }
 
