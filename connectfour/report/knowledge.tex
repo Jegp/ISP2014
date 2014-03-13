@@ -1,0 +1,12 @@
+Because the depth of the state space is to large to efficiently exhaust,
+heuristics are needed to guide the search. Still, it proved difficult to make a
+heuristic to guide the first couple moves, as the sparsely filled states leave
+little to go on. For this reason we opted for a knowledge base (KB) to guide the
+first few moves towards optimal paths. Concretely, we use a KB provided by John
+Tromp\footnote{http://homepages.cwi.nl/\textasciitilde tromp/}. The KB consists
+of ply-8 moves which, in itself, is insufficient for expert play. The initial
+guidance, leading to optimal states up to ply-8, makes it easier to find good
+hueristics, as it is a lot easier to make choices with e.g. 21 coins placed than
+with 5.
+
+
