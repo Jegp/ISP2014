@@ -1,0 +1,75 @@
+\documentclass[a4paper, titlepage]{article}
+
+\usepackage{courier} % Required for the courier font
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc}
+\usepackage[bookmarks]{hyperref}
+
+\lstset{
+mathescape=true,
+basicstyle=\ttfamily,
+numbers=left
+}
+
+\begin{document}
+
+\title{Exercise Lecture 4}
+\author{Sigurt 'Slap Blære' Dinesen \\sidi@itu.dk \\\\ Hans Pagh \\hkkp@itu.dk 
+\\\\Jens Egholm \\jegp@itu.dk}
+\maketitle
+\pagebreak
+
+\section*{Evaluation}
+\subsection*{Minimax}
+For evaluating the heuristics we use the minimax algorithm with alpha-beta pruning to
+search for the heuristics with maximum utility and minimum utility recursively. 
+For searching we use iterative deepening with an incrementing depth and a timer to cut off
+the search. Since the search can potentially be cut off before traversing the entire tree, 
+the iterative deepening ensures an evenly distributed heuristic in contrast to a depth-first
+approach.
+
+\section*{Heuristics}
+\subsection*{Knowledge base}
+This is bullshit. By Sigurt. And Hans. Not Jens.
+
+\subsection*{Threats}
+The Threats heuristic evaluates the state of a board based on the number of threats on the board. 
+A threat is defined as position where ether player can win the game, which simply means a position
+where ether plays have 3 connected coins and an open position to put the last coin. 
+The threats are then further categories into even and odd threats, based on that row they where found in.
+ 
+All the threats are then evaluated based on the following rules
+\begin{itemize} 
+	\item 
+	\item
+	\item
+\end{itemize} 
+By following these rules the AI, will try to force the opponent into playing a move, which will make the AI win. 
+
+\subsection*{Moves to win}
+The moves-to-win (MTW) heuristic is based on calculating the number of moves required to 
+secure a win. Every time a move is made the heuristic calculates all the possible 
+combinations to win a game. First it removes any MTW combinations from the opponent
+the new coin was a part of (that MTW is now no longer available) and second it finds 
+the combination where there is \texttt{a)} space enough for a possible win and 
+\texttt{b)} fewest coins required to win in comparison to others.
+
+These MTW values are updated for both players, but a sligthly larger weight is put on the 
+MTW value of the opponent to make sure that an immediate win from the \texttt{max} player 
+is given the same weight as an immediate win from the \texttt{min} player. Since the values 
+are calculated immediately after the \texttt{max} players turn, the next move cannot be 
+made before \texttt{min} moves, and so \texttt{max} would lose.
+
+The heuristic uses a datastructure that is passed down recursively via the 
+\texttt{minimax} algorithm, so the heuristic can cache the MTW combinations for each player.
+This gives a time advantage because the heuristic only has to calculate new MTW 
+combinations for one player at the time.
+
+The heuristic is strong in the beginning because it tries to get as long series of coins
+as possible, while preventing the opponent to grow large MTW combinations. It is 
+relatively weak in the end-game because it fails to detect some of the challenges 
+described in the \textit{Threats} heuristic.
+
+\end{document}
+
