@@ -22,12 +22,13 @@ numbers=left
 
 \section*{Evaluation}
 \subsection*{Minimax}
-For evaluating the heuristics we use the minimax algorithm with alpha-beta pruning to
-search for the heuristics with maximum utility and minimum utility recursively. 
-For searching we use iterative deepening with an incrementing depth and a timer to cut off
-the search. Since the search can potentially be cut off before traversing the entire tree, 
-the iterative deepening ensures an evenly distributed heuristic in contrast to a depth-first
-approach.
+The core algorithm used is minimax, with $\alpha/\beta$ pruning and caching.  To
+comply with the assignment constraint of spending no more than 10 seconds to
+decide a move, we use iterative deepening with an incrementing depth and a timer
+to cut off the search. Since the search can potentially be cut off before
+traversing the entire tree, the iterative deepening ensures an evenly
+distributed heuristic in contrast to a depth-first approach.
+
 \subsubsection*{Cache}
 We have implemented a cache to store already explored boards. This is done to ensure that 
 two equal boards does not get calculated twice. Furthermore we also mirrored the 
