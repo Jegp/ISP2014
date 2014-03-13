@@ -20,6 +20,7 @@ public class GLaDOS implements IGameLogic {
     //for search in knowledge base
     private int startDepth = 8;
     private Heuristic H;
+    boolean knowledge = false;
     // Private time variables if heuristic is running too long
     private long start, time;
     //whether
@@ -194,8 +195,9 @@ public class GLaDOS implements IGameLogic {
         hasReachedMaxDepth = true;
         if (startDepth <= 0) {
             H = new Threats();
+            return iterativeSearch();
         }
-        return iterativeSearch();
+        return minimax(gameBoard, startDepth);
     }
 
     // Iterative
@@ -209,7 +211,7 @@ public class GLaDOS implements IGameLogic {
         while (i < x * y && hasReachedMaxDepth) {
             System.out.println("depth: " + i);
             int newMove = minimax(gameBoard, ++i);
-            // BRÆJK! if time's up
+            // stahp if time's up (in the name of love!)
             if (!isTimeUp()) {
                 move = newMove;
             } else {
@@ -276,10 +278,11 @@ public class GLaDOS implements IGameLogic {
         }
         gameBoard = new LongBoard(x, y);
         if (x == 7 && y == 6){
+            knowledge = true;
             H = new baseLookUp();
             initKnowledge();
         } else {
-            H = new MovesToWin();
+            H = new Threats();
         }
     }
 
@@ -307,7 +310,11 @@ public class GLaDOS implements IGameLogic {
 
     public int decideNextMove() {
         start = System.currentTimeMillis();
-        return minimax(gameBoard, startDepth);
+        if (knowledge){
+            return knowledgeSearch();
+        } else {
+            return iterativeSearch();
+        }
     }
 
     /**
