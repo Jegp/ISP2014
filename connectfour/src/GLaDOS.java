@@ -8,7 +8,7 @@ import java.util.*;
  * The cake is a lie. Awesome quote from exercise description: 'Finally, it is
  * not recommended to write all the code in a single class e class.'
  */
-public class GLaDOS implements IGameLogic {
+public class GLaDiOS implements IGameLogic {
     private HashMap<String, Float> knowledgeBase;
     private int x = 0, y = 0;
     private int playerID;
@@ -27,11 +27,27 @@ public class GLaDOS implements IGameLogic {
 
 
     /**
-     * An tuple class parametrized over a type T. Just because I have an inherent disrespect for my RAM. Thanks Java.
+     * An tuple class parametrized over a type T. Just because I have an inherent disrespect for my memory.
+     * Thanks Java.
      */
     class Tuple<T, U> {
-        final T _1; final U _2;
+        T _1; U _2;
         Tuple(T _1, U _2) { this._1 = _1; this._2 = _2; }
+        @Override public boolean equals(Object that) {
+            if (that instanceof Tuple) {
+                Tuple other = (Tuple) that;
+                return other._1.equals(this._1) && other._2.equals(this._2);
+            } else return false;
+        }
+        @Override public int hashCode() {
+            if (_1 instanceof Integer && _2 instanceof Integer) {
+                return ((Integer) _1) << 4 | (Integer) _2;
+            }
+            return super.hashCode();
+        }
+        @Override public String toString() {
+            return "(" + _1.toString() + " -> " + _2.toString() + ")";
+        }
     }
 
     private ArrayList<Integer> generateActions(LongBoard state) {
@@ -63,15 +79,15 @@ public class GLaDOS implements IGameLogic {
         return H.h(board, data);
     }
 
-    private float utility(Winner win){
+    private float utility(Winner win, int depth){
         if (win == Winner.TIE) {
             return 0.0f;
         } else if (win.ordinal() == playerID -1) {
-            return 1.0f;
+            return 1.0f + depth * 0.00001f;
         } else if (win == Winner.NOT_FINISHED) {
             throw new IllegalArgumentException("Faggot");
         } else {
-            return -1.0f;
+            return -1.0f - depth * 0.00001f;
         }
     }
 
@@ -82,16 +98,16 @@ public class GLaDOS implements IGameLogic {
         Tuple<Float, HeuristicData> y = new Tuple<>((float) Integer.MIN_VALUE, null);
 
         if(win != Winner.NOT_FINISHED) {
-            float value = utility(win);
+            float value = utility(win, depth);
             cache.put(state.toString(), value);
             return new Tuple<>(value, null);
         }
 
-        if(cache.get(state.toString()) != null) {
+        if (cache.get(state.toString()) != null) {
             cacheHits++;
             return new Tuple<>(cache.get(state.toString()),null);
         }
-        if(depth == 0) {
+        if (depth == 0) {
             hasReachedMaxDepth = true;
             HeuristicData newData = H.moveHeuristic(data, action, opponentID);
             Tuple<Float, HeuristicData> value = h(state, newData);
@@ -129,13 +145,12 @@ public class GLaDOS implements IGameLogic {
         Winner win = gameFinished(state);
 
         if(cache.get(state.toString()) != null) {
-
             cacheHits++;
             return new Tuple<>(cache.get(state.toString()),null);
         }
         // If the state is a finished state
         if (win != Winner.NOT_FINISHED) {
-            float value = utility(win);
+            float value = utility(win, depth);
             cache.put(state.toString(), value);
             return new Tuple<>(value, null);
         }
@@ -179,10 +194,9 @@ public class GLaDOS implements IGameLogic {
     // knowledge!
     public int knowledgeSearch() {
         hasReachedMaxDepth = true;
-        if (startDepth > 0){
-        	return minimax(gameBoard, startDepth);
+        if (startDepth <= 0) {
+            H = new Threats();
         }
-        H = new Threats();
         return iterativeSearch();
     }
 
@@ -223,6 +237,8 @@ public class GLaDOS implements IGameLogic {
 
         //Generate the valid actions from the start state
         for (int action : generateActions(state)) {
+            // Stop if we're out of time
+            if (isTimeUp()) break;
             Tuple<Float, HeuristicData> max = min(
                     result(state,action),
                     H.createHeuristic(), Integer.MIN_VALUE, Integer.MAX_VALUE, action, depth - 1
@@ -261,10 +277,10 @@ public class GLaDOS implements IGameLogic {
         }
         gameBoard = new LongBoard(x, y);
         if (x == 7 && y == 6){
-            H = new baseLookUp();
-            initKnowledge();
+            H = new MovesToWin();
+            //initKnowledge();
         } else {
-            H = new Threats();
+            H = new MovesToWin();
         }
     }
 
@@ -321,7 +337,7 @@ public class GLaDOS implements IGameLogic {
                 ret = playerID == 2 ? 1f : -1f;
                 return new Tuple<Float, HeuristicData>(0f, null);
             } else {
-            	System.err.println("HIT");
+                System.err.println("HIT");
             }
 
             ret = playerID == 2 ? -ret : ret;
@@ -551,41 +567,102 @@ public class GLaDOS implements IGameLogic {
             // First duplicate and update the board
             MTWData newData = new MTWData(oldData);
             newData.move(column, player);
+
+            // Find the new MTWCs for both players and return
+            updateMTWCs(newData);
             return newData;
         }
 
-        private void traceDirection(Tuple<List<Tuple<Integer, Integer>>, List<Tuple<Integer, Integer>>> list, int board[][],
-                                    int startX, int startY, int dx, int dy) {
+        /**
+         * Traces the number of coins and free spaces (tupled) in the given direction.
+         */
+        private Tuple<Integer, Integer> traceDirection(Set<Tuple<Integer, Integer>> set,
+                                                       int board[][], int player,
+                                                       int startX, int startY, int dx, int dy) {
+            Tuple<Integer, Integer> res = new Tuple<>(0, 0);
             // Return if we are outside the board
-            if ((startX >= x || startX < 0) || (startY >= y || startY < 0)) return;
-
-            // Find the value at the board and store its coordinates if it belongs to a player
+            if ((startX >= x || startX < 0) || (startY >= y || startY < 0)) return res;
             int value = board[startX][startY];
-            if (value != 0) {
-                Tuple<Integer, Integer> next = new Tuple<>(startX, startY);
-                if (value == playerID) {
-                    list._1.add(next);
-                } else {
-                    list._2.add(next);
-                }
-                traceDirection(list, board, startX + dx, startY + dy, dx, dy);
+
+            // Add the coordinate
+            if (value == player) {
+                set.add(new Tuple<>(startX, startY));
+                res._1++;
+            } else if (value == 0) {
+                res._2++;
             }
+
+            // Traverse recursively if the other player is not in the way
+            if (value == 0 || value == player) {
+                Tuple<Integer, Integer> newRes =
+                        traceDirection(set, board, player, startX + dx, startY + dy, dx, dy);
+                res._1 += newRes._1;
+                res._2 += newRes._2;
+            }
+
+            return res;
         }
 
         private void addMTWCs(MTWData data, int x, int y, int dx, int dy) {
-            // Create tuples of lists of tuples of coordinates with annoying syntax
-            Tuple<List<Tuple<Integer, Integer>>, List<Tuple<Integer, Integer>>> list =
-                    new Tuple<List<Tuple<Integer, Integer>>, List<Tuple<Integer, Integer>>>
-                            (new ArrayList<Tuple<Integer, Integer>>(), new ArrayList<Tuple<Integer, Integer>>());
+            // Create set of tuples with coordinates - with annoying syntax
+            Set<Tuple<Integer, Integer>> set = new HashSet<Tuple<Integer, Integer>>();
             // Trace in the given direction and it's opposite direction
-            traceDirection(list, data.board,       x,       y,  dx,  dy);
-            traceDirection(list, data.board,  x - dx,  y - dx, -dx, -dy);
-            // Add to heuristic data if not empty
-            if (!list._1.isEmpty()) data.mTWCFP1.add(list._1);
-            if (!list._2.isEmpty()) data.mTWCFP2.add(list._2);
+            Tuple<Integer, Integer> first  = traceDirection(set, data.board, data.player,      x,       y,  dx,  dy);
+            Tuple<Integer, Integer> second = traceDirection(set, data.board, data.player, x - dx,  y - dx, -dx, -dy);
+            // Add to heuristic data if not empty and the WC is large enough to give a win
+            if (!set.isEmpty() && first._1 + first._2 + second._1 + second._2 > 3) {
+                int mTW = 4 - first._1 + second._1;
+
+                if (data.player == playerID) {
+                    data.mTWCFP1.add(set);
+                    if (mTW < data.mTW1) data.mTW1 = mTW;
+                }
+                else {
+                    data.mTWCFP2.add(set);
+                    if (mTW < data.mTW2) data.mTW2 = mTW;
+                }
+
+            }
+        }
+
+        /**
+         * Removes MTWCs from the opponent that are 'destroyed' by the latest move.
+         */
+        private void removeBrokenMTWCs(MTWData data) {
+            Set<Set<Tuple<Integer, Integer>>> set;
+            if (data.player == playerID) {
+                set = data.mTWCFP2;
+            } else {
+                set = data.mTWCFP1;
+            }
+            Iterator<Set<Tuple<Integer, Integer>>> combinations = set.iterator();
+            while (combinations.hasNext()) {
+                Set<Tuple<Integer, Integer>> combination = combinations.next();
+                for (Tuple<Integer, Integer> coordinate : combination) {
+                    // Remove the combination if it contains the current coordinate
+                    // (safely by using the iterator remove)
+                    if (coordinate._1.equals(data.column) && coordinate._2.equals(data.row)) {
+                        combinations.remove();
+                        break;
+                    }
+                }
+            }
         }
 
         private void updateMTWCs(MTWData data) {
+            // Delete old MTWCs and reset the MTW for the current player
+            if (data.player == playerID) {
+                data.mTWCFP1 = new HashSet<>();
+                data.mTW1    = 4;
+            } else {
+                data.mTWCFP2 = new HashSet<>();
+                data.mTW2    = 4;
+            }
+
+
+            // Remove old MTWCs
+            removeBrokenMTWCs(data);
+
             // Trace horizontal
             addMTWCs(data, data.column, data.row, 1, 0);
 
@@ -599,25 +676,9 @@ public class GLaDOS implements IGameLogic {
             addMTWCs(data, data.column, data.row, -1, -1);
         }
 
-        private int getMTW(List<List<Tuple<Integer, Integer>>> mTWCs) {
-            int moves = 4;
-            for (List<Tuple<Integer, Integer>> list : mTWCs) {
-                int size = list.size();
-                if (4 - size < moves) moves = 4 - size;
-            }
-            return moves;
-        }
-
         public Tuple<Float, MTWData> h(LongBoard board, MTWData data) {
-            // Find the new MTWCs for both players
-            updateMTWCs(data);
-
-            // Find the least MTW
-            int mTWP1 = getMTW(data.mTWCFP1);
-            int mTWP2 = getMTW(data.mTWCFP2);
-
             // Calculate and return heuristic value (between -1 and 1)
-            float h = (mTWP1 - (mTWP2 * 1.2f)) / 5;
+            float h = (data.mTW1 - data.mTW2 * 1.25f) / 5;
             return new Tuple<>(h, data);
         }
 
@@ -628,16 +689,19 @@ public class GLaDOS implements IGameLogic {
             // The board for the current state
             int board[][] = new int[x][y];
             // Moves to win combinations for player 1 (mTWCFP1)
-            List<List<Tuple<Integer, Integer>>> mTWCFP1 = new ArrayList<>();
+            Set<Set<Tuple<Integer, Integer>>> mTWCFP1;
             // Moves to win combinations for player 2 (mTWCFP2)
-            List<List<Tuple<Integer, Integer>>> mTWCFP2 = new ArrayList<>();
+            Set<Set<Tuple<Integer, Integer>>> mTWCFP2;
 
-            int column, row, player;
+            int column, row, player, mTW1, mTW2;
 
             /**
              * Creates a MTWData board with no initial coins set.
              */
-            MTWData() {}
+            MTWData() {
+                mTWCFP1 = new HashSet<>(); mTWCFP2 = new HashSet<>();
+                mTW1 = 4; mTW2 = 4;
+            }
 
             /**
              * Constructs a copy of a MTWData object.
@@ -646,8 +710,10 @@ public class GLaDOS implements IGameLogic {
                 for (int i = 0; i < x; i++) {
                     System.arraycopy(old.board[i], 0, board[i], 0, y);
                 }
-                Collections.copy(old.mTWCFP1, this.mTWCFP1);
-                Collections.copy(old.mTWCFP1, this.mTWCFP2);
+                this.mTWCFP1 = new HashSet<>(old.mTWCFP1);
+                this.mTWCFP2 = new HashSet<>(old.mTWCFP2);
+                this.mTW1 = old.mTW1;
+                this.mTW2 = old.mTW2;
             }
 
             /**
@@ -746,6 +812,7 @@ public class GLaDOS implements IGameLogic {
         private int getBit(long l, int n){
             return (int)((l >> n) & 1L);
         }
+
         @Override
         public String toString() {
             StringBuffer sBuff = new StringBuffer();
@@ -764,7 +831,7 @@ public class GLaDOS implements IGameLogic {
 
                 sBuff.append(slotState);
                 if (i < SIZE1 -2){
-                   sBuff.append(",");
+                    sBuff.append(",");
                 }
             }
             return sBuff.toString();

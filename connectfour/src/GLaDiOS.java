@@ -22,6 +22,8 @@ public class GLaDiOS implements IGameLogic {
     private Heuristic H;
     // Private time variables if heuristic is running too long
     private long start, time;
+    //whether
+    private boolean boardBroken = false;
 
 
     /**
@@ -96,13 +98,13 @@ public class GLaDiOS implements IGameLogic {
         Tuple<Float, HeuristicData> y = new Tuple<>((float) Integer.MIN_VALUE, null);
 
         if(win != Winner.NOT_FINISHED) {
-        	float value = utility(win, depth);
-        	cache.put(state.toString(), value);
-        	return new Tuple<>(value, null);
+            float value = utility(win, depth);
+            cache.put(state.toString(), value);
+            return new Tuple<>(value, null);
         }
 
         if (cache.get(state.toString()) != null) {
-        	cacheHits++;
+            cacheHits++;
 			return new Tuple<>(cache.get(state.toString()),null);
 		}
         if (depth == 0) {
@@ -143,19 +145,18 @@ public class GLaDiOS implements IGameLogic {
         Winner win = gameFinished(state);
 
         if(cache.get(state.toString()) != null) {
-        	
-        	cacheHits++;
-        	return new Tuple<>(cache.get(state.toString()),null);
+            cacheHits++;
+            return new Tuple<>(cache.get(state.toString()),null);
         }
         // If the state is a finished state
         if (win != Winner.NOT_FINISHED) {
-        	float value = utility(win, depth);
-        	cache.put(state.toString(), value);
+            float value = utility(win, depth);
+            cache.put(state.toString(), value);
             return new Tuple<>(value, null);
         }
         
         if(cache.get(state.toString()) != null) {
-        	cacheHits++;
+            cacheHits++;
 			return new Tuple<>(cache.get(state.toString()),null);
 		}
         
@@ -193,10 +194,9 @@ public class GLaDiOS implements IGameLogic {
     // knowledge!
     public int knowledgeSearch() {
         hasReachedMaxDepth = true;
-        if (startDepth > 0){
-            return minimax(gameBoard, startDepth);
+        if (startDepth <= 0) {
+            H = new Threats();
         }
-        H = new MovesToWin();
         return iterativeSearch();
     }
 
@@ -234,7 +234,7 @@ public class GLaDiOS implements IGameLogic {
         cache = new HashMap<>();
         hasReachedMaxDepth = false;
         float y = Integer.MIN_VALUE;
- 
+
         //Generate the valid actions from the start state
         for (int action : generateActions(state)) {
             // Stop if we're out of time
@@ -277,14 +277,21 @@ public class GLaDiOS implements IGameLogic {
         }
         gameBoard = new LongBoard(x, y);
         if (x == 7 && y == 6){
-            H = new baseLookUp();
-            initKnowledge();
+            H = new MovesToWin();
+            //initKnowledge();
         } else {
             H = new MovesToWin();
         }
     }
 
     public Winner gameFinished() {
+        if (boardBroken){
+            if (playerID == 1){
+                return Winner.PLAYER1;
+            } else{
+                return Winner.PLAYER2;
+            }
+        }
         return gameFinished(gameBoard);
     }
 
@@ -324,10 +331,16 @@ public class GLaDiOS implements IGameLogic {
         public HeuristicData moveHeuristic(HeuristicData blah, int blah1, int blah2) {return null;}
         public Tuple<Float, HeuristicData> h(LongBoard board, HeuristicData data) {
             Float ret = knowledgeBase.get(board.toString());
+            System.err.println(board.toString());
             if (ret == null){
-                ret = 0f;
+                System.err.println("Miss");
+                ret = playerID == 2 ? 1f : -1f;
+                return new Tuple<Float, HeuristicData>(0f, null);
+            } else {
+            	System.err.println("HIT");
             }
-            ret = playerID == 1 ? ret : -ret;
+
+            ret = playerID == 2 ? -ret : ret;
 
             return new Tuple<Float, HeuristicData>(ret, null);
         }
@@ -338,99 +351,99 @@ public class GLaDiOS implements IGameLogic {
         public HeuristicData createHeuristic() { return null; }
         public HeuristicData moveHeuristic(HeuristicData data, int column, int p) { return null; }
 
-		public Tuple<Float, HeuristicData> h(LongBoard state, HeuristicData data) {
-			int player;
-			Set<Integer> AEVEN = new TreeSet<>();
-			Set<Integer> AODD = new TreeSet<>();
-			Set<Integer> BEVEN = new TreeSet<>();
-			Set<Integer> BODD = new TreeSet<>();
-			ArrayList<Set<Integer>> lists = new ArrayList<Set<Integer>>();
-			lists.add(0, AEVEN);
-			lists.add(1, BEVEN);
-			lists.add(0 + 2, AODD);
-			lists.add(1 + 2, BODD);
-			for (int h=0; h <= state.HEIGHT; h++) {
-				for (int w=h; w < state.SIZE1; w+=state.H1) {
-					player = -1;
-					long mask = 1l<<w;
-					//A owns postion
-					if((state.boards[0] & mask) !=0) {
-						player = 0;
-					}
-					//B owns postion
-					if((state.boards[1] & mask) !=0) {
-						player = 1;
-					} 
+        public Tuple<Float, HeuristicData> h(LongBoard state, HeuristicData data) {
+            int player;
+            Set<Integer> AEVEN = new TreeSet<>();
+            Set<Integer> AODD = new TreeSet<>();
+            Set<Integer> BEVEN = new TreeSet<>();
+            Set<Integer> BODD = new TreeSet<>();
+            ArrayList<Set<Integer>> lists = new ArrayList<Set<Integer>>();
+            lists.add(0, AEVEN);
+            lists.add(1, BEVEN);
+            lists.add(0 + 2, AODD);
+            lists.add(1 + 2, BODD);
+            for (int h=0; h <= state.HEIGHT; h++) {
+                for (int w=h; w < state.SIZE1; w+=state.H1) {
+                    player = -1;
+                    long mask = 1l<<w;
+                    //A owns postion
+                    if((state.boards[0] & mask) !=0) {
+                        player = 0;
+                    }
+                    //B owns postion
+                    if((state.boards[1] & mask) !=0) {
+                        player = 1;
+                    }
 
-					if(player != -1) {
-						//VERT
-						if(h + 3 < state.HEIGHT) {
-							int emptyPos = explore(w, 3, 1, player, state, -1, 0);
-							if(emptyPos != -1) {
-								//System.err.println(w);
-								//System.err.println("Found threat VERT " + player + " at pos " + emptyPos);
-								lists.get(player + (emptyPos%2)*2).add(emptyPos);
-							}
-						}
-						//HORI
-						if((w / state.H1)+ 3 < state.WIDTH) {
-							int emptyPos = explore(w, 3, state.H1, player, state, -1, 0);
-							if(emptyPos != -1) {
-								//System.err.println(w);
-								//System.err.println("Found threat HORI " + player + " at pos " + emptyPos);
-								lists.get(player+ (emptyPos%2)*2).add(emptyPos);
-							}
-						}
-						// '/'
-						if((h + 3 < state.HEIGHT) && ((w / state.H1)+ 3 < state.WIDTH)) {
-							int emptyPos = explore(w, 3, state.H2, player, state, -1, 0);
-							if(emptyPos != -1) {
-								//System.err.println(w);
-								//System.err.println("Found threat / " + player + " at pos " + emptyPos);
-								lists.get(player+ (emptyPos%2)*2).add(emptyPos);
-							}
-						}
-					}
-								//No one owns postion
-					else {
-						//VERT
-						if(h + 3 < state.HEIGHT) {
-							int play = zeroExplore(w,3,1,-1,state);
-							if(play != -1) {
-								//System.err.println(w);
-								//System.err.println("Found Threat VERT " + play + " at pos " + w);
-								lists.get(play+ (w%2)*2).add(w);
-							}
-						}
-						//HORI
-						if((w / state.H1)+ 3 < state.WIDTH) {
-							int play = zeroExplore(w,3,state.H1,-1,state);
-							if(play != -1) {
-							//	System.err.println(w);
-								//System.err.println("Found Threat HORI " + play + " at pos " + w);
-								lists.get(play+ (w%2)*2).add(w);
-							}
-						}
-						// '/'
-						if((h + 3 < state.HEIGHT) && ((w / state.H1)+ 3 < state.WIDTH)) {
-							int play = zeroExplore(w,3,state.H2,-1,state);
-							if(play != -1) {
-					//			System.err.println(w);
-						//		System.err.println("Found Threat / " + play + " at pos " + w);
-								lists.get(play+ (w%2)*2).add(w);
-							}
-						}
-						if(h + 3 < state.HEIGHT && ((w / state.H1) - 3 >= 0)) {
-							int play = zeroExplore(w,3,-state.HEIGHT,-1,state);
-							if(play != -1) {
-			//					System.err.println(w);
-				//				System.err.println("Found Threat \\ " + play + " at pos " + w);
-								lists.get(play+ (w%2)*2).add(w);
-							}
-						}
-					}
-				}
-			}
+                    if(player != -1) {
+                        //VERT
+                        if(h + 3 < state.HEIGHT) {
+                            int emptyPos = explore(w, 3, 1, player, state, -1, 0);
+                            if(emptyPos != -1) {
+                                //System.err.println(w);
+                                //System.err.println("Found threat VERT " + player + " at pos " + emptyPos);
+                                lists.get(player + (emptyPos%2)*2).add(emptyPos);
+                            }
+                        }
+                        //HORI
+                        if((w / state.H1)+ 3 < state.WIDTH) {
+                            int emptyPos = explore(w, 3, state.H1, player, state, -1, 0);
+                            if(emptyPos != -1) {
+                                //System.err.println(w);
+                                //System.err.println("Found threat HORI " + player + " at pos " + emptyPos);
+                                lists.get(player+ (emptyPos%2)*2).add(emptyPos);
+                            }
+                        }
+                        // '/'
+                        if((h + 3 < state.HEIGHT) && ((w / state.H1)+ 3 < state.WIDTH)) {
+                            int emptyPos = explore(w, 3, state.H2, player, state, -1, 0);
+                            if(emptyPos != -1) {
+                                //System.err.println(w);
+                                //System.err.println("Found threat / " + player + " at pos " + emptyPos);
+                                lists.get(player+ (emptyPos%2)*2).add(emptyPos);
+                            }
+                        }
+                    }
+                    //No one owns postion
+                    else {
+                        //VERT
+                        if(h + 3 < state.HEIGHT) {
+                            int play = zeroExplore(w,3,1,-1,state);
+                            if(play != -1) {
+                                //System.err.println(w);
+                                //System.err.println("Found Threat VERT " + play + " at pos " + w);
+                                lists.get(play+ (w%2)*2).add(w);
+                            }
+                        }
+                        //HORI
+                        if((w / state.H1)+ 3 < state.WIDTH) {
+                            int play = zeroExplore(w,3,state.H1,-1,state);
+                            if(play != -1) {
+                                //	System.err.println(w);
+                                //System.err.println("Found Threat HORI " + play + " at pos " + w);
+                                lists.get(play+ (w%2)*2).add(w);
+                            }
+                        }
+                        // '/'
+                        if((h + 3 < state.HEIGHT) && ((w / state.H1)+ 3 < state.WIDTH)) {
+                            int play = zeroExplore(w,3,state.H2,-1,state);
+                            if(play != -1) {
+                                //			System.err.println(w);
+                                //		System.err.println("Found Threat / " + play + " at pos " + w);
+                                lists.get(play+ (w%2)*2).add(w);
+                            }
+                        }
+                        if(h + 3 < state.HEIGHT && ((w / state.H1) - 3 >= 0)) {
+                            int play = zeroExplore(w,3,-state.HEIGHT,-1,state);
+                            if(play != -1) {
+                                //					System.err.println(w);
+                                //				System.err.println("Found Threat \\ " + play + " at pos " + w);
+                                lists.get(play+ (w%2)*2).add(w);
+                            }
+                        }
+                    }
+                }
+            }
 		/*for (Integer set : lists.get(0)) {
 			System.err.println("A");
 			System.err.println(set);
@@ -449,100 +462,100 @@ public class GLaDiOS implements IGameLogic {
 				System.err.println("BODD");
 				System.err.println(set);
 			}*/
-		 
-		 int neg;
-		 if(playerID == 1) {
-			 neg = 1;
-		 } else {
-			 neg = -1;
-		 }
-		 
-		 for (Integer pos : AODD) {
-			int col = pos/state.HEIGHT;
-			if(!ThreatsBelow(col, pos, BEVEN) && !ThreatsInOtherColums(col,BODD)) {
-				//WIN FOR A
-				return new Tuple<>(0.9F*neg,null);
-			}
-		 }
-		 int count = 0;
-		 for (Integer pos : AODD) {
-				int col = pos/state.HEIGHT;
-				if(!ThreatsBelow(col, pos, BEVEN)) {
-					count++;
-				}
-			 }
-		 if(count > BODD.size() && BEVEN.size() == 0) {
-			 return new Tuple<>(0.9F * neg,null);
-		 }
-		 
-		 if(BEVEN.size() > 0) {
-			 return new Tuple<>(-0.9F *neg,null);
-		 }
-				
-		 return new Tuple<>(0F,null);
-		}
-    	
-		public boolean ThreatsBelow(int col,int pos,Set<Integer> haystack) {
-			for (Integer pos2 : haystack) {
-				if(pos2/gameBoard.HEIGHT == col) {
-					if(pos2 < pos) {
-						return true;
-					}
-				}
-			}
-			return false;
-		}
-		
-		public boolean ThreatsInOtherColums(int col,Set<Integer> haystack) {
-			for (Integer pos2 : haystack) {
-				if(pos2/gameBoard.HEIGHT != col) {
-					return true;
-				}
-			}
-			return false;
-		}
 
-			//Returns placement of the threat
-			private int explore(int startPostion, int depth, int dicrection, int lastFoundPlayer, LongBoard state,int threatPlacement, int emptyPostions) {
-				if(depth == 0) {
-					return threatPlacement;
-				}
-				long mask = 1l <<(startPostion + dicrection);
-				if((state.boards[lastFoundPlayer] & mask) != 0) {
-					return explore(startPostion + dicrection, depth-1, dicrection, lastFoundPlayer, state,-1,emptyPostions);
-				} else if ((state.boards[Math.abs(lastFoundPlayer-1)] & mask) != 0) {
-					return -1;
-				} else {
-					if(emptyPostions == 0) {
-						return explore(startPostion + dicrection, depth-1, dicrection, lastFoundPlayer, state,startPostion+dicrection,1);
-					} else {
-						return -1;
-					}
-				}
-			}
+            int neg;
+            if(playerID == 1) {
+                neg = 1;
+            } else {
+                neg = -1;
+            }
 
-			//Returns the index of the player who owns the threat
-			private int zeroExplore(int startPostion, int depth, int dicrection, int lastFoundPlayer, LongBoard state) {
-				if(depth == 0) {
-					return lastFoundPlayer;
-				}
-				long mask = 1l <<(startPostion + dicrection);
+            for (Integer pos : AODD) {
+                int col = pos/state.HEIGHT;
+                if(!ThreatsBelow(col, pos, BEVEN) && !ThreatsInOtherColums(col,BODD)) {
+                    //WIN FOR A
+                    return new Tuple<>(0.9F*neg,null);
+                }
+            }
+            int count = 0;
+            for (Integer pos : AODD) {
+                int col = pos/state.HEIGHT;
+                if(!ThreatsBelow(col, pos, BEVEN)) {
+                    count++;
+                }
+            }
+            if(count > BODD.size() && BEVEN.size() == 0) {
+                return new Tuple<>(0.9F * neg,null);
+            }
 
-				if((state.boards[0] & mask) != 0) {
-					if(lastFoundPlayer == 0 || lastFoundPlayer == -1) {
-						return zeroExplore(startPostion + dicrection, depth-1, dicrection, 0, state);
-					}
-					return -1;
-				} else if ((state.boards[1] & mask) != 0) {
-					if(lastFoundPlayer == 1 || lastFoundPlayer == -1) {
-						return zeroExplore(startPostion + dicrection, depth-1, dicrection, 1, state);
-					}
-					return -1;
-				} else {
-					return -1;
-				}
-			}
-		}
+            if(BEVEN.size() > 0) {
+                return new Tuple<>(-0.9F *neg,null);
+            }
+
+            return new Tuple<>(0F,null);
+        }
+
+        public boolean ThreatsBelow(int col,int pos,Set<Integer> haystack) {
+            for (Integer pos2 : haystack) {
+                if(pos2/gameBoard.HEIGHT == col) {
+                    if(pos2 < pos) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        public boolean ThreatsInOtherColums(int col,Set<Integer> haystack) {
+            for (Integer pos2 : haystack) {
+                if(pos2/gameBoard.HEIGHT != col) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        //Returns placement of the threat
+        private int explore(int startPostion, int depth, int dicrection, int lastFoundPlayer, LongBoard state,int threatPlacement, int emptyPostions) {
+            if(depth == 0) {
+                return threatPlacement;
+            }
+            long mask = 1l <<(startPostion + dicrection);
+            if((state.boards[lastFoundPlayer] & mask) != 0) {
+                return explore(startPostion + dicrection, depth-1, dicrection, lastFoundPlayer, state,-1,emptyPostions);
+            } else if ((state.boards[Math.abs(lastFoundPlayer-1)] & mask) != 0) {
+                return -1;
+            } else {
+                if(emptyPostions == 0) {
+                    return explore(startPostion + dicrection, depth-1, dicrection, lastFoundPlayer, state,startPostion+dicrection,1);
+                } else {
+                    return -1;
+                }
+            }
+        }
+
+        //Returns the index of the player who owns the threat
+        private int zeroExplore(int startPostion, int depth, int dicrection, int lastFoundPlayer, LongBoard state) {
+            if(depth == 0) {
+                return lastFoundPlayer;
+            }
+            long mask = 1l <<(startPostion + dicrection);
+
+            if((state.boards[0] & mask) != 0) {
+                if(lastFoundPlayer == 0 || lastFoundPlayer == -1) {
+                    return zeroExplore(startPostion + dicrection, depth-1, dicrection, 0, state);
+                }
+                return -1;
+            } else if ((state.boards[1] & mask) != 0) {
+                if(lastFoundPlayer == 1 || lastFoundPlayer == -1) {
+                    return zeroExplore(startPostion + dicrection, depth-1, dicrection, 1, state);
+                }
+                return -1;
+            } else {
+                return -1;
+            }
+        }
+    }
 
     /**
      * A heuristic that considers moves to win.
@@ -742,6 +755,9 @@ public class GLaDiOS implements IGameLogic {
              TOP;    // A long with all the bytes in the top row ignited.
 
         public LongBoard(int width, int height) {
+            if (((width * height) + width) > 64) {
+                boardBroken = true;
+            }
             init(width, height);
         }
 
@@ -799,15 +815,15 @@ public class GLaDiOS implements IGameLogic {
 
         @Override
         public String toString() {
-            StringBuilder sBuff = new StringBuilder();
+            StringBuffer sBuff = new StringBuffer();
             for (int i=0; i < SIZE1; i++){
                 if ((i+1)%(H1) == 0) continue;
-                int oppBoard = getBit(boards[opponentID -1], i);
-                int playBoard = getBit(boards[playerID -1], i);
-                String slotState = "";
-                if (oppBoard == 1) {
+                int firstBoard = getBit(boards[0], i);
+                int secondBoard = getBit(boards[1], i);
+                String slotState ="";
+                if (secondBoard == 1) {
                     slotState = "o";
-                } else if (playBoard == 1) {
+                } else if (firstBoard == 1) {
                     slotState = "x";
                 } else {
                     slotState = "b";
@@ -820,6 +836,7 @@ public class GLaDiOS implements IGameLogic {
             }
             return sBuff.toString();
         }
+
     }
 
     //initialize knowledge base from file
@@ -830,7 +847,8 @@ public class GLaDiOS implements IGameLogic {
             String line;
             while ((line = br.readLine()) != null){
                 int commaIdx = line.lastIndexOf(",");
-                knowledgeBase.put(line.substring(0, commaIdx), Float.parseFloat(line.substring(commaIdx+1)));
+                System.out.println(line.substring(0, commaIdx));
+                knowledgeBase.put(line.substring(0, commaIdx), Float.parseFloat(line.substring(commaIdx + 1)));
             }
             br.close();
         } catch (FileNotFoundException e) {
