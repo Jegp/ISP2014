@@ -5,3 +5,8 @@ connectfour/bin/
 *#
 *.log
 tmp
+*.pdf
+*.dvi
+*.aux
+*.log
+*.gz
