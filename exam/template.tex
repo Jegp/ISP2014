@@ -5,6 +5,7 @@
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{lmodern}
+\usepackage{listings}
 \DeclareUnicodeCharacter{22AD}{\modelsn}
 
 \author{Jens Egholm Pedersen}
@@ -12,15 +13,52 @@
 
 \section*{Problem 1}
 
-\subsection*{a)}
-$x_4 = 1 - x_1 - x_2 - x_3 $
-\subsection*{b)}
-\begin{tabular}{l l}
-Initial & $x_4 = 1 - x_1 - x_2 - x_3 $ \\
-		& $z = x_1 + x_2 + 1/4x_3$ \\ \\
-Pivoting $x_1$ & $x_1 = 1 - x_2 - x_3 - x_4 $ \\
- 		& $z = 1 - 3/4x_3 - x_4$
-\end{tabular}
 
+\section*{Problem 1}
+
+\subsection*{a)}
+See attachment 2.A. The \texttt{UtilitySum} decison would be to set an
+\texttt{X} in the lower left corner, because the utility value is 1
+compared to the other two states which both sum to the utility value 0.
+
+\subsection*{b)}
+\begin{lstlisting}[frame=single]
+function UtilitySum(s):
+    if isEndNode(s) then
+        return UtilityValue(s)
+    else
+        children <- getChildren(s)
+        sum <- 0
+        for each node in children do
+            sum <- sum + UtilitySum(s)
+        return sum
+\end{lstlisting}
+This function takes a state as a parameters and then examines if it is an
+end-node. If so, we simply return the utility value from that state, which
+will be within the range [-1; 1].
+If it is not an end-node, we simply cumulate the utility values from
+all the child-nodes recursively, which will give us the sum of all the
+utility values in a depth-first manor.
+
+\subsection*{c)}
+The critical mistake is that \texttt{UtilitySum} does not take into
+account that there are different players with different goals. In
+other words the cumulated utility value has different meaning depending
+on the player. In attachment 2.C a (simplified and somewhat hypothetical)
+game tree shows a
+situation where this distinction matters. State \texttt{b)} and \texttt{c)}
+have the summed value of 0, so the state should not be favoured. But in fact
+both \texttt{MAX} and \texttt{MIN} can win if they enter this state: if
+\texttt{MAX} starts she wins and vice versa. This can also be illustrated
+by pinning a \texttt{UtilitySum} player against a \texttt{Minimax} player.
+\texttt{UtilitySum} will not have any reservations to enter state \texttt{a)},
+while \texttt{Minimax} immediately will see that this is either a winning
+or losing move.
+
+Since \texttt{UtilitySum} is not
+able to account for the importance of whos turn it is, it cannot play as
+optimal as \texttt{Minimax}.
+
+\section*{Problem 3}
 
 \end{document}
