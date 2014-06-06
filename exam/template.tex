@@ -12,10 +12,35 @@
 \begin{document}
 
 \section*{Problem 1}
+\subsection*{a)}
+We set $f = g(n)$ such that $g$ is the minimum remaining driving length.
+Except for the first state I have excluded nodes where curved pieces
+are flipped to the other side, because the flipped pieces are 'travelling'
+in the wrong direction, such that the minimum remaining distance cannot possibly
+be less than non-flipped pieces.
 
+See attachment 1.A.
 
-\section*{Problem 1}
+\subsection*{b)}
+As above I have avoided drawing flipped pieces, except in the first state.
 
+See attachment 1.B.
+
+\subsection*{c)}
+The SLD heuristic is admissible because it fulfills the criteria of never
+overestimating the cost to reach the goal. The shortest distance between
+two points will always be the straight-line distance, so the found path must
+be the best solution in a 2-dimensional space.
+
+\subsection*{d)}
+Consistency can be defined via the triangle inequality, which shows that
+each side of a triangle cannot be longer than the sum of the other two sides.
+This holds in our case because of the optimistic heuristic and the restrictions
+placed on us by the 2-dimensional rail-grid.
+The SLD is consistent because there is no way to make a shorter route than the
+one already found by A*.
+
+\section*{Problem 2}
 \subsection*{a)}
 See attachment 2.A. The \texttt{UtilitySum} decison would be to set an
 \texttt{X} in the lower left corner, because the utility value is 1
@@ -60,5 +85,130 @@ able to account for the importance of whos turn it is, it cannot play as
 optimal as \texttt{Minimax}.
 
 \section*{Problem 3}
+\subsection*{a)}
+See attachment 3.A.
+
+\subsection*{b)}
+Slack form:
+\begin{align*}
+x_3 & = 4 - 1/2x_1 - x_2 \\
+x_4 & = 4 - x_1 \\
+x_5 & = -2 + 2x_1 + x_2 \\
+z & = 2x_1 + x_2 \\
+x_1, x_2, x_3, x_4, x_5 & \ge 0
+\end{align*}
+
+\subsection*{c)}
+The initial dictionary is only feasible if the constraints can be
+fulfilled by setting $x_1 = 0, x_2 = 0, ..., x_n = 0$. Since $x_5$ has
+a negative constant, the slack form is not feasible.
+
+\subsection*{d)}
+For the two-phase simplex we maximize
+$w = -x_0$
+in the following:
+\begin{align*}
+x_3 & = 4 - 1/2x_1 - x_2 + x_0\\
+x_4 & = 4 - x_1 + x_0 \\
+x_5 & = -2 + 2x_1 + x_2  + x_0\\
+x_0, x_1, x_2, x_3, x_4, x_5 & \ge 0
+\end{align*}
+
+Pivoting $x_5$:
+\begin{align*}
+x_5 & = -2 + 2x_1 + x_2  + x_0 \Leftrightarrow \\
+-x_0 & = -2 + 2x_1 + x_2 - x_5 \Leftrightarrow \\
+x_0 & = 2 - 2x_1 -x_2 + x_5
+\end{align*}
+
+Inserting $x_0$:
+\begin{align*}
+x_3 & = 4 - 1/2x_1 - x_2 + 2 - 2x_1 -x_2 + x_5 \\
+    & = 6 - 5/2x_1 - 2x_2 + x_5 \\
+x_4 & = 4 - x_1 + 2 - 2x_1 -x_2 + x_5 \\
+    & = 6 - 3x_1 - x_2 + x_5 \\
+\end{align*}
+
+Since there are no negative constants, the dictionary is feasible.
+We now choose $x_1$ as the entering variable and $x_0$ as the leaving,
+because $x_1$ has the most negative coefficient:
+\begin{align*}
+x_0 &= 2 - 2x_1 - x_2 + x_5 \Leftrightarrow \\
+2x_1 &= 2 - x_2 + x_5 - x_0 \Leftrightarrow \\
+x_1  &= 1 - 1/2x_2 + 1/2x_5 - 1/2x_0
+\end{align*}
+
+\begin{align*}
+x_3 & = 6 - 5/2(1 - 1/2x_2 + 1/2x_5 - 1/2x_0) - 2x_2 + x_5 \\
+    & = 6 - 5/2 + 5/4x_2 - 5/4x_5 - 5/4x_0 - 2x_2 + x_5 \\
+    & = 7/2 - 3/4x_2 + 1/4x_5 - 5/4x_0 \\
+\\
+x_4 & = 6 - 3(1 - 1/2x_2 + 1/2x_5 - 1/2x_0) - x_2 + x_5 \\
+    & = 6 - 3 + 3/2x_2 - 3/2x_5 + 3/2x_0 - x_2 + x_5 \\
+    & = 3 + 1/2x_2 - 1/2x_5 + 3/2x_0 \\
+\\
+z & = 2x_1 + x_2 \\
+  & = 2(1 - 1/2x_2 + 1/2x_5 - 1/2x_0) + x_2 \\
+  & = 2 - x_2 + x_5 - x_0 + x_2 \\
+  & = 2 + x_5 \\
+\end{align*}
+
+We then have the dictionary:
+\begin{align*}
+x_1 & = 1 - 1/2x_2 + 1/2x_5 \\
+x_3 & = 7/2 - 3/4x_2 + 1/4x_5 \\
+x_4 & = 3 + 1/2x_2 - 1/2x_5 \\
+z   & = 2 + x_5
+\end{align*}
+Which is the same as the dictionary given in problem \texttt{d)}. 
+
+\subsection*{e)}
+The initial dictionary shows that $x_2$ is zero (since it is not present as
+a slack variable) and that $x_1$ is set to the value of the constant: 1. The
+corner we start at is then given by the coordinates: $(1, 0)$. This also
+aligns with the expectation that $x_0$ should be minimised as much as possible.
+
+\subsection*{f)}
+By coordinates ($x_1, x_2$) the $z'$ values are:
+\begin{align*}
+(1, 0) &: z' = 1^2 + 0^2 = 1 \\
+(4, 0) &: z' = 4^2 + 0^2 = 16 \\
+(4, 2) &: z' = 4^2 + 2^2 = 20 \\
+(0, 2) &: z' = 0^2 + 2^2 = 4 \\
+(0, 4) &: z' = 0^2 + 4^2 = 16 \\
+\end{align*}
+
+\subsection*{g)}
+The neighbors to the corner point $(1, 0)$ are $(4, 0)$ and $(0, 2)$ because
+the points can be reached by maximising only one constraint.
+
+\subsection*{h)}
+To reach each corner point, the variable that describes the line towards that
+corner, must be pivoted. As an example we can assume we are at the coordinates
+$(4, 0)$ in attachment 3.A. To reach $(4, 2)$ we must maximise $x_4$ because
+that is the variable that is currently constraining growth. By isolating $x_4$
+and pivoting it in, we are able to describe a system where we can maximise $x_4$
+until another variable starts constraining (unless the problem is unbounded).
+
+\subsection*{i)}
+The hill-climbing algorithm will continue to 'climb' up the neighbors and pick
+the best solution available. Since we are optimising $z' = x_1^2 + x_2^2$
+the corner $(4, 0)$ (value of 16) will be preferable to the corner $(2, 0)$
+(value of 4).
+
+\subsection*{j)}
+Written in order after the two-phase algorithm (beginning in $(1, 0)$):
+\begin{tabular}{l l}
+$(2, 0)$ & Discarded\\
+$(4, 0)$ & Chosen \\
+$(4, 2)$ & Chosen \\
+$(0, 4)$ & Discarded \\
+         & $(4, 2)$ wins
+\end{tabular}
+After visiting $(4, 0)$ the algorithm cannot find any better neighbors and
+terminates.
+
+I have assumed that the hill-climbing algorithm is smart enough not to visit
+previous (inferior) points.
 
 \end{document}
