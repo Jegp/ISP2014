@@ -40,6 +40,7 @@ placed on us by the 2-dimensional rail-grid.
 The SLD is consistent because there is no way to make a shorter route than the
 one already found by A*.
 
+\pagebreak
 \section*{Problem 2}
 \subsection*{a)}
 See attachment 2.A. The \texttt{UtilitySum} decison would be to set an
@@ -52,7 +53,7 @@ function UtilitySum(s):
     if isEndNode(s) then
         return UtilityValue(s)
     else
-        children <- getChildren(s)
+        children <- GetChildren(s)
         sum <- 0
         for each node in children do
             sum <- sum + UtilitySum(s)
@@ -84,6 +85,7 @@ Since \texttt{UtilitySum} is not
 able to account for the importance of whos turn it is, it cannot play as
 optimal as \texttt{Minimax}.
 
+\pagebreak
 \section*{Problem 3}
 \subsection*{a)}
 See attachment 3.A.
@@ -198,17 +200,18 @@ the corner $(4, 0)$ (value of 16) will be preferable to the corner $(2, 0)$
 
 \subsection*{j)}
 Written in order after the two-phase algorithm (beginning in $(1, 0)$):
+
 \begin{tabular}{l l}
 $(2, 0)$ & Discarded\\
 $(4, 0)$ & Chosen \\
 $(4, 2)$ & Chosen \\
 $(0, 4)$ & Discarded \\
-         & $(4, 2)$ wins
 \end{tabular}
-After visiting $(4, 0)$ the algorithm cannot find any better neighbors and
-terminates.
 
-I have assumed that the hill-climbing algorithm is smart enough not to visit
+Result: $(4, 2)$ wins
+
+After visiting $(4, 0)$ the algorithm cannot find any better neighbors and
+terminates. I have assumed that the hill-climbing algorithm is smart enough not to visit
 previous (inferior) points.
 
 \end{document}
